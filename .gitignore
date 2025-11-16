@@ -1,0 +1,21 @@
+node_modules
+.env
+.env.local
+
+# Build outputs
+dist
+build
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel

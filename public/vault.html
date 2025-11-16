@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberMystic</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        void: '#08090e',
+                        surface: '#0f1117',
+                        border: '#181b24',
+                        accent: '#00c9ff',
+                        accent2: '#8b7aff',
+                        text: '#f8f9fa',
+                        muted: '#9ca3af',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        display: ['Roobert', 'Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+                    },
+                    fontSize: {
+                        'micro': ['0.625rem', { lineHeight: '1', letterSpacing: '0.08em' }],
+                        'caption': ['0.75rem', { lineHeight: '1.2', letterSpacing: '0.05em' }],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+        body {
+            background: #08090e;
+            color: #f8f9fa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 300;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ultra-subtle static grid */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0,201,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,201,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Refined glass */
+        .glass {
+            background: rgba(15, 17, 23, 0.4);
+            backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+        }
+
+        .glass::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(0,201,255,0.2) 50%,
+                transparent);
+            opacity: 0;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass:hover::before { opacity: 1; }
+
+        /* Sophisticated hover */
+        .hover-lift {
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 201, 255, 0.15);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 201, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        /* Premium button */
+        .btn {
+            background: linear-gradient(135deg, rgba(0,201,255,0.12) 0%, rgba(139,122,255,0.12) 100%);
+            border: 1px solid rgba(0, 201, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+            letter-spacing: 0.02em;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn:hover::before { left: 100%; }
+
+        .btn:hover {
+            border-color: rgba(0, 201, 255, 0.4);
+            box-shadow:
+                0 12px 24px rgba(0, 201, 255, 0.15),
+                0 0 0 1px rgba(0, 201, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            transition-duration: 0.1s;
+        }
+
+        /* Typography refinement */
+        .heading {
+            font-weight: 200;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Elegant animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(32px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+
+
+        /* Minimal HUD corners */
+        .corner {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            opacity: 0.3;
+            transition: opacity 0.4s ease;
+        }
+
+        .corner::before,
+        .corner::after {
+            content: '';
+            position: absolute;
+            background: rgba(0, 201, 255, 0.4);
+        }
+
+        .corner.tl::before { top: 0; left: 0; width: 100%; height: 1px; }
+        .corner.tl::after { top: 0; left: 0; width: 1px; height: 100%; }
+
+        .corner.tr::before { top: 0; right: 0; width: 100%; height: 1px; }
+        .corner.tr::after { top: 0; right: 0; width: 1px; height: 100%; }
+
+        .corner.bl::before { bottom: 0; left: 0; width: 100%; height: 1px; }
+        .corner.bl::after { bottom: 0; left: 0; width: 1px; height: 100%; }
+
+        .corner.br::before { bottom: 0; right: 0; width: 100%; height: 1px; }
+        .corner.br::after { bottom: 0; right: 0; width: 1px; height: 100%; }
+
+        .glass:hover .corner { opacity: 0.8; }
+
+        /* Status indicator - refined */
+        .status {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #00c9ff;
+            box-shadow: 0 0 8px rgba(0, 201, 255, 0.8);
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.95); }
+        }
+
+        /* Badge refinement */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.6875rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid;
+            transition: all 0.3s ease;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.06) 20%,
+                rgba(255, 255, 255, 0.06) 80%,
+                transparent);
+        }
+
+        /* Selection styling */
+        ::selection {
+            background: rgba(0, 201, 255, 0.2);
+            color: #fff;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #08090e; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 201, 255, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 201, 255, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="grid-overlay"></div>
+
+    <div class="relative z-10">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+
+            <!-- Header -->
+            <header class="mb-24 fade-in" style="animation-delay: 0s">
+                <div class="text-center">
+
+                    <!-- Status -->
+                    <div class="flex items-center justify-center gap-2 mb-8">
+                        <div class="status"></div>
+                        <span class="mono text-micro text-muted uppercase">System Active</span>
+                    </div>
+
+                    <!-- Logo -->
+                    <h1 class="heading text-6xl md:text-8xl mb-6">
+                        <span class="text-accent" style="font-weight: 300">Cyber</span><span class="text-text" style="font-weight: 200">Mystic</span>
+                    </h1>
+
+                    <!-- Subtitle -->
+                    <p class="text-muted text-sm md:text-base mb-8" style="letter-spacing: 0.08em">
+                        Content Access Protocol <span class="text-muted/50 mx-2">/</span> Vault Interface
+                    </p>
+
+                    <!-- TDP Badge -->
+                    <div class="inline-block">
+                        <div class="badge border-accent/20 bg-accent/5 text-accent/80">
+                            TDP-1.0 Compliant
+                        </div>
+                    </div>
+
+                    <!-- Decorative line -->
+                    <div class="divider mt-12"></div>
+                </div>
+            </header>
+
+            <!-- Connection -->
+            <div class="glass rounded-3xl p-10 mb-12 hover-lift fade-in relative" style="animation-delay: 0.1s">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+
+                <div class="text-center relative z-10">
+                    <button
+                        id="connectButton"
+                        onclick="connectWallet()"
+                        class="btn text-text px-12 py-4 rounded-xl relative"
+                    >
+                        <span class="relative z-10">Initialize Connection</span>
+                    </button>
+                    <div id="walletInfo" class="mt-6 hidden"></div>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16 fade-in" style="animation-delay: 0.2s">
+                <div class="glass rounded-2xl p-6 hover-lift text-center">
+                    <div class="mono text-micro text-muted uppercase mb-3">Total Decks</div>
+                    <div class="mono text-4xl text-accent font-light" id="totalDecks">—</div>
+                </div>
+                <div class="glass rounded-2xl p-6 hover-lift text-center">
+                    <div class="mono text-micro text-muted uppercase mb-3">Owned</div>
+                    <div class="mono text-4xl text-accent2 font-light" id="ownedDecks">—</div>
+                </div>
+                <div class="glass rounded-2xl p-6 hover-lift text-center">
+                    <div class="mono text-micro text-muted uppercase mb-3">Free Access</div>
+                    <div class="mono text-4xl text-green-400 font-light" id="freeDecks">—</div>
+                </div>
+                <div class="glass rounded-2xl p-6 hover-lift text-center">
+                    <div class="mono text-micro text-muted uppercase mb-3">Network</div>
+                    <div class="mono text-2xl text-text/80 font-light">Moonbase</div>
+                </div>
+            </div>
+
+            <!-- Deck Grid -->
+            <div id="deckGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full text-center py-20">
+                    <div class="status mx-auto mb-4"></div>
+                    <div class="mono text-caption text-muted">Loading vault data...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        // Contract interaction
+        const CONTRACT_ADDRESS = "0x76d3ceB6cD517331C78670fF7C00D213f0292ADd";
+        const MOONBASE_ALPHA = {
+            chainId: '0x507',
+            chainName: 'Moonbase Alpha',
+            nativeCurrency: { name: 'DEV', symbol: 'DEV', decimals: 18 },
+            rpcUrls: ['https://rpc.api.moonbase.moonbeam.network'],
+            blockExplorerUrls: ['https://moonbase.moonscan.io/']
+        };
+
+        const CONTRACT_ABI = [
+            "function balanceOf(address account, uint256 id) view returns (uint256)",
+            "function uri(uint256 tokenId) view returns (string)",
+            "function getContentInfo(uint256 contentId) view returns (tuple(string name, address creator, uint256 maxSupply, uint256 totalMinted, string payloadURI, string specificationURI, string manifestURI))",
+            "function mint(address to, uint256 id, uint256 amount) external",
+            "function contentCreators(uint256 contentId) view returns (address)"
+        ];
+
+        const DECKS = [
+            {
+                contentId: 13,
+                name: "Waite-Smith Rider Tarot",
+                year: "1909",
+                creator: "Public Domain",
+                description: "Classic divination system featuring detailed illustrations across all 78 cards. The most recognized tarot deck worldwide.",
+                free: true,
+                tradition: "RWS",
+                license: "Public Domain"
+            },
+            {
+                contentId: 14,
+                name: "Tarot de Marseille",
+                year: "1760",
+                creator: "Public Domain",
+                description: "Historic French pattern with traditional woodblock-style imagery. An essential reference for tarot scholarship.",
+                free: true,
+                tradition: "Marseille",
+                license: "Public Domain"
+            },
+            {
+                contentId: 17,
+                name: "Anecdotes Tarot",
+                year: "2024",
+                creator: "Yve Lepkowski",
+                description: "Contemporary interpretation with personal narratives and modern imagery. Available under Creative Commons.",
+                free: true,
+                tradition: "Modern",
+                license: "CC-BY-SA 4.0"
+            },
+            {
+                contentId: 18,
+                name: "Clown Town Tarot",
+                year: "2024",
+                creator: "Yve Lepkowski",
+                description: "Whimsical circus-themed deck with bold colors and playful interpretations. Available under Creative Commons.",
+                free: true,
+                tradition: "Modern",
+                license: "CC-BY-SA 4.0"
+            },
+            {
+                contentId: 15,
+                name: "Anecdotes Tarot",
+                year: "2024",
+                creator: "Yve Lepkowski",
+                description: "Original limited edition. Replaced by unlimited CC-BY-SA version.",
+                free: false,
+                price: "0.01 DEV",
+                maxSupply: 100,
+                tradition: "Modern",
+                license: "All Rights Reserved",
+                legacy: true
+            },
+            {
+                contentId: 16,
+                name: "Clown Town Tarot",
+                year: "2024",
+                creator: "Yve Lepkowski",
+                description: "Original limited edition. Replaced by unlimited CC-BY-SA version.",
+                free: false,
+                price: "0.02 DEV",
+                maxSupply: 50,
+                tradition: "Modern",
+                license: "All Rights Reserved",
+                legacy: true
+            }
+        ];
+
+        let provider, signer, contract, userAddress;
+
+        async function connectWallet() {
+            if (!window.ethereum) {
+                alert('MetaMask required for connection.');
+                return;
+            }
+
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                userAddress = accounts[0];
+
+                try {
+                    await ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: MOONBASE_ALPHA.chainId }]
+                    });
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        await ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [MOONBASE_ALPHA]
+                        });
+                    }
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                document.getElementById('connectButton').style.display = 'none';
+                document.getElementById('walletInfo').classList.remove('hidden');
+                document.getElementById('walletInfo').innerHTML = `
+                    <div class="inline-flex items-center gap-2 mono text-caption text-accent">
+                        <div class="status"></div>
+                        <span>Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}</span>
+                    </div>
+                `;
+
+                await loadLibrary();
+
+            } catch (error) {
+                console.error('Connection error:', error);
+                alert('Connection failed.');
+            }
+        }
+
+        async function loadLibrary() {
+            const grid = document.getElementById('deckGrid');
+            grid.innerHTML = '';
+
+            let owned = 0, free = 0;
+
+            for (const [index, deck] of DECKS.entries()) {
+                const balance = await contract.balanceOf(userAddress, deck.contentId);
+                const hasPass = balance.toNumber() > 0;
+                if (hasPass) owned++;
+                if (deck.free) free++;
+
+                try {
+                    const info = await contract.getContentInfo(deck.contentId);
+                    deck.totalMinted = info.totalMinted.toNumber();
+                } catch (e) {
+                    deck.totalMinted = 0;
+                }
+
+                const card = createCard(deck, hasPass);
+                card.style.animationDelay = `${0.3 + index * 0.08}s`;
+                grid.appendChild(card);
+            }
+
+            document.getElementById('totalDecks').textContent = DECKS.length;
+            document.getElementById('ownedDecks').textContent = owned;
+            document.getElementById('freeDecks').textContent = free;
+        }
+
+        function createCard(deck, hasPass) {
+            const el = document.createElement('div');
+            el.className = 'glass rounded-3xl p-8 hover-lift fade-in relative';
+
+            const statusBadge = hasPass
+                ? `<div class="badge border-accent/20 bg-accent/5 text-accent/90">Owned</div>`
+                : deck.free
+                ? `<div class="badge border-green-400/20 bg-green-400/5 text-green-400/90">Free</div>`
+                : `<div class="badge border-accent2/20 bg-accent2/5 text-accent2/90">${deck.price}</div>`;
+
+            const action = hasPass
+                ? `<button onclick="openDeck(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Access Deck</span></button>`
+                : deck.free
+                ? `<button onclick="claim(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Claim Pass</span></button>`
+                : `<button onclick="purchase(${deck.contentId}, '${deck.price}')" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Purchase Pass</span></button>`;
+
+            el.innerHTML = `
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+
+                <div class="relative z-10">
+                    <!-- Header -->
+                    <div class="flex items-start justify-between mb-6">
+                        <div class="flex-1">
+                            <h3 class="heading text-2xl text-text mb-1.5">${deck.name}</h3>
+                            <div class="flex items-center gap-2 text-muted text-caption">
+                                <span>${deck.year}</span>
+                                <span class="opacity-30">•</span>
+                                <span>${deck.creator}</span>
+                            </div>
+                        </div>
+                        <div class="mono text-micro text-muted/50 mt-1">ID:${deck.contentId}</div>
+                    </div>
+
+                    ${deck.legacy ? `<div class="badge border-amber-400/20 bg-amber-400/5 text-amber-400/90 mb-4">Legacy</div>` : ''}
+
+                    <!-- Description -->
+                    <p class="text-muted text-sm leading-relaxed mb-6">${deck.description}</p>
+
+                    <!-- Status -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        ${statusBadge}
+                        <div class="badge border-border bg-surface/50 text-muted/70">${deck.tradition}</div>
+                    </div>
+
+                    <!-- Metrics -->
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <div class="text-center glass rounded-xl py-3">
+                            <div class="mono text-micro text-muted/70 mb-1">Supply</div>
+                            <div class="mono text-sm text-accent/90">${deck.maxSupply === 0 ? '∞' : deck.maxSupply}</div>
+                        </div>
+                        <div class="text-center glass rounded-xl py-3">
+                            <div class="mono text-micro text-muted/70 mb-1">Minted</div>
+                            <div class="mono text-sm text-accent/90">${deck.totalMinted || '0'}</div>
+                        </div>
+                        <div class="text-center glass rounded-xl py-3">
+                            <div class="mono text-micro text-muted/70 mb-1">Cards</div>
+                            <div class="mono text-sm text-accent/90">78</div>
+                        </div>
+                    </div>
+
+                    <!-- Action -->
+                    ${action}
+                </div>
+            `;
+
+            return el;
+        }
+
+        async function claim(id) {
+            try {
+                const creator = await contract.contentCreators(id);
+                const isCreator = creator.toLowerCase() === userAddress.toLowerCase();
+
+                if (isCreator) {
+                    const tx = await contract.mint(userAddress, id, 1);
+                    alert('Minting pass...');
+                    await tx.wait();
+                    alert('Pass minted.');
+                    await loadLibrary();
+                } else {
+                    if (confirm('Request free pass?')) {
+                        try {
+                            const tx = await contract.mint(userAddress, id, 1);
+                            alert('Minting...');
+                            await tx.wait();
+                            alert('Claimed!');
+                            await loadLibrary();
+                        } catch (error) {
+                            alert('Note: Creator must mint passes.\n\nError: ' + error.message);
+                        }
+                    }
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function purchase(id, price) {
+            try {
+                const value = parseFloat(price.split(' ')[0]);
+                const wei = ethers.utils.parseEther(value.toString());
+                const creator = await contract.contentCreators(id);
+
+                if (confirm(`Purchase pass for ${price}?`)) {
+                    const tx = await signer.sendTransaction({ to: creator, value: wei });
+                    alert('Processing payment...');
+                    await tx.wait();
+                    alert('Payment confirmed.\n\nCreator will mint your pass.');
+                    await loadLibrary();
+                }
+            } catch (error) {
+                alert('Transaction failed: ' + error.message);
+            }
+        }
+
+        function openDeck(id) {
+            window.location.href = `tarot-reader-real.html?contentId=${id}`;
+        }
+
+        if (window.ethereum && window.ethereum.selectedAddress) {
+            connectWallet();
+        }
+    </script>
+</body>
+</html>

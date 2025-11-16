@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Divination — ContentPassFactory</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        void: '#08090e',
+                        surface: '#0f1117',
+                        border: '#181b24',
+                        accent: '#00c9ff',
+                        accent2: '#8b7aff',
+                        muted: '#9ca3af'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #08090e;
+            position: relative;
+            overflow-x: hidden;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Ultra-subtle static grid overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(0deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px),
+                repeating-linear-gradient(90deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Glass morphism with haute couture refinement */
+        .glass-card {
+            background: linear-gradient(135deg, rgba(15, 17, 23, 0.4) 0%, rgba(15, 17, 23, 0.6) 100%);
+            backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(24, 27, 36, 0.8);
+            border-radius: 16px;
+            position: relative;
+            overflow: visible;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+
+        /* Minimal HUD corners */
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 16px;
+            pointer-events: none;
+            border: 1px solid transparent;
+            background:
+                linear-gradient(90deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 0 0 / 100% 1px no-repeat,
+                linear-gradient(0deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 0 0 / 1px 100% no-repeat,
+                linear-gradient(90deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 100% 0 / 100% 1px no-repeat,
+                linear-gradient(0deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 100% 0 / 1px 100% no-repeat,
+                linear-gradient(90deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 0 100% / 100% 1px no-repeat,
+                linear-gradient(0deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 0 100% / 1px 100% no-repeat,
+                linear-gradient(90deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 100% 100% / 100% 1px no-repeat,
+                linear-gradient(0deg, rgba(0, 201, 255, 0.3) 12px, transparent 12px) 100% 100% / 1px 100% no-repeat;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover::after {
+            opacity: 0.8;
+        }
+
+        /* Premium button with shine sweep */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(0, 201, 255, 0.15) 0%, rgba(139, 122, 255, 0.15) 100%);
+            border: 1px solid rgba(0, 201, 255, 0.3);
+            border-radius: 8px;
+            color: rgba(248, 249, 250, 0.95);
+            font-weight: 300;
+            font-size: 0.8125rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            padding: 0.875rem 2rem;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 201, 255, 0.5);
+            background: linear-gradient(135deg, rgba(0, 201, 255, 0.2) 0%, rgba(139, 122, 255, 0.2) 100%);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 201, 255, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        /* Refined select dropdown */
+        select.elegant-select {
+            background: linear-gradient(135deg, rgba(15, 17, 23, 0.6) 0%, rgba(15, 17, 23, 0.8) 100%);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(0, 201, 255, 0.2);
+            border-radius: 8px;
+            color: rgba(248, 249, 250, 0.9);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            padding: 0.875rem 1rem;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        select.elegant-select:focus {
+            outline: none;
+            border-color: rgba(0, 201, 255, 0.5);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(0, 201, 255, 0.1);
+        }
+
+        select.elegant-select option {
+            background: #0f1117;
+            color: #f8f9fa;
+        }
+
+        /* Refined card image container */
+        .card-frame {
+            position: relative;
+            border: 1px solid rgba(0, 201, 255, 0.3);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 201, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(0, 201, 255, 0.05) 0%, transparent 100%);
+            overflow: hidden;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-frame::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg,
+                rgba(0, 201, 255, 0.3),
+                rgba(139, 122, 255, 0.3),
+                rgba(0, 201, 255, 0.3));
+            border-radius: 12px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-frame:hover {
+            transform: translateY(-4px);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(0, 201, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .card-frame:hover::before {
+            opacity: 0.4;
+        }
+
+        /* Fade in up animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Staggered delays */
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .delay-3 { animation-delay: 0.3s; opacity: 0; }
+
+        /* Refined status dot */
+        .status-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #00c9ff;
+            box-shadow: 0 0 8px rgba(0, 201, 255, 0.6);
+            animation: statusPulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        /* Typography refinement */
+        .heading {
+            font-weight: 200;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            color: rgba(248, 249, 250, 0.95);
+        }
+
+        .subheading {
+            font-weight: 300;
+            letter-spacing: 0.02em;
+            color: rgba(156, 163, 175, 0.9);
+        }
+
+        .label {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 0.625rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(0, 201, 255, 0.8);
+        }
+
+        /* Badge system */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6875rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border: 1px solid;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: rgb(52, 211, 153);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: rgb(251, 191, 36);
+        }
+
+        .badge-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: rgb(248, 113, 113);
+        }
+
+        .badge-info {
+            background: rgba(0, 201, 255, 0.1);
+            border-color: rgba(0, 201, 255, 0.3);
+            color: rgb(0, 201, 255);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 17, 23, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 201, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 201, 255, 0.5);
+        }
+
+        /* Selection styling */
+        ::selection {
+            background: rgba(0, 201, 255, 0.2);
+            color: #f8f9fa;
+        }
+
+        /* Grid hover effect */
+        .grid-item {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+
+        .grid-item:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(0, 201, 255, 0.3);
+            box-shadow:
+                0 12px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 201, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200">
+    <div class="max-w-7xl mx-auto relative z-10 p-5" style="padding-top: 3rem; padding-bottom: 3rem;">
+
+        <!-- Header -->
+        <header class="text-center mb-16 animate-fade-in-up">
+            <h1 class="heading text-5xl mb-4">Neural Divination</h1>
+            <p class="subheading text-base mb-6">TDP-1.0 Protocol Interface</p>
+            <div class="inline-flex items-center gap-2 badge badge-info">
+                <div class="status-dot"></div>
+                <span>Protocol Active</span>
+            </div>
+        </header>
+
+        <!-- Step 1: Connect Wallet -->
+        <div class="glass-card p-8 mb-6 text-center animate-fade-in-up delay-1">
+            <p class="label mb-4">Step 1</p>
+            <h2 class="heading text-2xl mb-6">Connect Wallet</h2>
+            <button
+                id="connectButton"
+                onclick="connectWallet()"
+                class="btn"
+            >
+                Connect to Moonbase Alpha
+            </button>
+            <div id="walletInfo" class="mt-6"></div>
+        </div>
+
+        <!-- Step 2: Select Deck -->
+        <div id="deckSelector" class="glass-card p-8 mb-6 text-center hidden animate-fade-in-up delay-2">
+            <p class="label mb-4">Step 2</p>
+            <h2 class="heading text-2xl mb-6">Select Deck</h2>
+            <select id="deckSelect" onchange="loadSelectedDeck()" class="elegant-select w-full max-w-md mx-auto mb-6 text-center cursor-pointer">
+                <option value="">— Choose Deck —</option>
+                <option value="waite-smith-rider">WAITE-SMITH RIDER [1909] · ID:13</option>
+                <option value="tarot-de-marseille">TAROT DE MARSEILLE [1760] · ID:14</option>
+                <option value="anecdotes-tarot">ANECDOTES TAROT [YVE] · ID:17</option>
+                <option value="clown-town-tarot">CLOWN TOWN TAROT [YVE] · ID:18</option>
+            </select>
+            <div id="deckInfo" class="text-sm"></div>
+            <div id="loadingStatus" class="mt-6"></div>
+        </div>
+
+        <!-- Controls -->
+        <div id="controls" class="text-center mb-6 hidden animate-fade-in-up delay-3" style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button onclick="drawRandomCard()" class="btn">
+                Draw Card
+            </button>
+            <button onclick="resetDeck()" class="btn">
+                Reset Deck
+            </button>
+            <button onclick="showFullDeck()" class="btn">
+                View Full Deck
+            </button>
+        </div>
+
+        <!-- Card Display -->
+        <div id="cardDisplay" class="glass-card p-8 text-center hidden">
+            <div class="card-frame max-w-sm mx-auto mb-8">
+                <img id="cardImage" class="w-full h-auto block" src="" alt="">
+            </div>
+            <div id="cardName" class="heading text-3xl mb-3"></div>
+            <div id="cardKeywords" class="subheading text-sm"></div>
+        </div>
+
+        <!-- Full Deck -->
+        <div id="fullDeck" class="glass-card p-8 hidden">
+            <h2 class="heading text-2xl text-center mb-8">Complete Archive</h2>
+            <div id="deckGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentDeck = null;
+        let drawnCards = [];
+
+        const DECK_URLS = {
+            'waite-smith-rider': 'tdp-packages/waite-smith-rider.zip',
+            'tarot-de-marseille': 'tdp-packages/tarot-de-marseille.zip',
+            'anecdotes-tarot': 'tdp-packages/anecdotes-tarot.zip',
+            'clown-town-tarot': 'tdp-packages/clown-town-tarot.zip'
+        };
+
+        const DECK_TO_CONTENT_ID = {
+            'waite-smith-rider': 13,
+            'tarot-de-marseille': 14,
+            'anecdotes-tarot': 17,
+            'clown-town-tarot': 18
+        };
+
+        const CONTRACT_ADDRESS = "0x76d3ceB6cD517331C78670fF7C00D213f0292ADd";
+        const CONTRACT_ABI = [
+            "function balanceOf(address account, uint256 id) view returns (uint256)"
+        ];
+
+        let provider, signer, contract, userAddress;
+
+        const MOONBASE_ALPHA = {
+            chainId: '0x507',
+            chainName: 'Moonbase Alpha',
+            nativeCurrency: { name: 'DEV', symbol: 'DEV', decimals: 18 },
+            rpcUrls: ['https://rpc.api.moonbase.moonbeam.network'],
+            blockExplorerUrls: ['https://moonbase.moonscan.io/']
+        };
+
+        async function connectWallet() {
+            if (!window.ethereum) {
+                alert('MetaMask not detected. Please install MetaMask to continue.');
+                return;
+            }
+
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                userAddress = accounts[0];
+
+                try {
+                    await ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: MOONBASE_ALPHA.chainId }]
+                    });
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        await ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [MOONBASE_ALPHA]
+                        });
+                    }
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                document.getElementById('connectButton').style.display = 'none';
+                document.getElementById('walletInfo').innerHTML = `
+                    <div class="badge badge-success inline-flex">
+                        <div class="status-dot"></div>
+                        <span>Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}</span>
+                    </div>
+                `;
+                document.getElementById('deckSelector').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Connection error:', error);
+                alert('Connection failed: ' + error.message);
+            }
+        }
+
+        async function loadSelectedDeck() {
+            const selector = document.getElementById('deckSelect');
+            const deckId = selector.value;
+
+            if (!deckId) return;
+
+            const contentId = DECK_TO_CONTENT_ID[deckId];
+            const statusDiv = document.getElementById('loadingStatus');
+
+            // Step 1: Verify pass ownership
+            statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Verifying Access</span></div>';
+
+            try {
+                const balance = await contract.balanceOf(userAddress, contentId);
+                const passCount = balance.toNumber();
+
+                if (passCount === 0) {
+                    statusDiv.innerHTML = `
+                        <div class="badge badge-error inline-flex mb-4">
+                            <span>Access Denied</span>
+                        </div>
+                        <p class="text-sm subheading">
+                            Visit <a href="deck-library.html" class="text-accent hover:text-accent2 underline transition-colors">Deck Vault</a> to acquire pass for Content ID ${contentId}
+                        </p>
+                    `;
+                    return;
+                }
+
+                statusDiv.innerHTML = `
+                    <div class="badge badge-success inline-flex mb-3">
+                        <div class="status-dot"></div>
+                        <span>Access Granted · ${passCount} Pass${passCount > 1 ? 'es' : ''}</span>
+                    </div>
+                    <div class="badge badge-warning inline-flex">
+                        <div class="status-dot"></div>
+                        <span>Loading Package</span>
+                    </div>
+                `;
+
+                // Step 2: Fetch ZIP file
+                const response = await fetch(DECK_URLS[deckId]);
+                const blob = await response.blob();
+
+                statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Extracting Data</span></div>';
+
+                // Extract ZIP
+                const zip = await JSZip.loadAsync(blob);
+
+                statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Parsing Manifest</span></div>';
+
+                // Load manifest
+                const manifestText = await zip.file('manifest.json').async('string');
+                const manifest = JSON.parse(manifestText);
+
+                statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Loading Images</span></div>';
+
+                // Load all card images
+                const cards = [];
+                for (const file of manifest.files.image_list) {
+                    const imageData = await zip.file(file.path).async('base64');
+                    const ext = file.filename.split('.').pop().toLowerCase();
+                    const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
+
+                    // Find card info from manifest
+                    let cardInfo = null;
+                    for (const card of manifest.card_map.major_arcana) {
+                        if (file.filename.includes(card.id)) {
+                            cardInfo = { ...card, type: 'major', filename: file.filename, data: imageData, mimeType };
+                            break;
+                        }
+                    }
+
+                    if (!cardInfo) {
+                        for (const [suitName, suit] of Object.entries(manifest.card_map.suits)) {
+                            for (const card of suit.cards) {
+                                if (file.filename.includes(card.id)) {
+                                    cardInfo = { ...card, type: 'minor', suit: suitName, filename: file.filename, data: imageData, mimeType };
+                                    break;
+                                }
+                            }
+                            if (cardInfo) break;
+                        }
+                    }
+
+                    if (cardInfo) {
+                        cards.push(cardInfo);
+                    }
+                }
+
+                currentDeck = {
+                    manifest,
+                    cards
+                };
+
+                drawnCards = [];
+
+                // Update UI
+                document.getElementById('deckInfo').innerHTML = `
+                    <div class="heading text-lg mb-3">${manifest.deck_name}</div>
+                    <div class="subheading text-xs space-y-1">
+                        <div>${manifest.structure.total_cards} cards loaded</div>
+                        <div>Protocol: TDP-${manifest.version}</div>
+                        <div>Format: ${manifest.structure.format}</div>
+                    </div>
+                `;
+
+                statusDiv.innerHTML = `
+                    <div class="badge badge-success inline-flex">
+                        <div class="status-dot"></div>
+                        <span>Loaded ${cards.length} Cards</span>
+                    </div>
+                `;
+
+                document.getElementById('controls').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Load error:', error);
+                statusDiv.innerHTML = `
+                    <div class="badge badge-error inline-flex mb-3">
+                        <span>System Error</span>
+                    </div>
+                    <p class="text-sm subheading">${error.message}</p>
+                `;
+            }
+        }
+
+        function drawRandomCard() {
+            if (!currentDeck) return;
+
+            const availableCards = currentDeck.cards.filter(card =>
+                !drawnCards.includes(card.id)
+            );
+
+            if (availableCards.length === 0) {
+                alert('All cards have been drawn. Reset the deck to continue.');
+                return;
+            }
+
+            const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+            drawnCards.push(randomCard.id);
+            displayCard(randomCard);
+        }
+
+        function displayCard(card) {
+            const cardDisplay = document.getElementById('cardDisplay');
+            const cardImage = document.getElementById('cardImage');
+            const cardName = document.getElementById('cardName');
+            const cardKeywords = document.getElementById('cardKeywords');
+
+            cardImage.src = `data:${card.mimeType};base64,${card.data}`;
+            cardName.textContent = card.name;
+            cardKeywords.textContent = card.keywords ? card.keywords.join(' · ') : '';
+
+            cardDisplay.classList.remove('hidden');
+            document.getElementById('fullDeck').classList.add('hidden');
+        }
+
+        function resetDeck() {
+            drawnCards = [];
+            document.getElementById('cardDisplay').classList.add('hidden');
+            alert('Deck reset. All cards are available again.');
+        }
+
+        function showFullDeck() {
+            if (!currentDeck) return;
+
+            const deckGrid = document.getElementById('deckGrid');
+            deckGrid.innerHTML = '';
+
+            currentDeck.cards.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'grid-item cursor-pointer rounded-lg overflow-hidden';
+                cardDiv.onclick = () => displayCard(card);
+
+                const img = document.createElement('img');
+                img.src = `data:${card.mimeType};base64,${card.data}`;
+                img.alt = card.name;
+                img.title = card.name;
+                img.className = 'w-full rounded-lg';
+
+                cardDiv.appendChild(img);
+                deckGrid.appendChild(cardDiv);
+            });
+
+            document.getElementById('cardDisplay').classList.add('hidden');
+            document.getElementById('fullDeck').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

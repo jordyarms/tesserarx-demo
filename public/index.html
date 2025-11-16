@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentPassFactory — Decentralized Content Distribution</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        void: '#08090e',
+                        surface: '#0f1117',
+                        border: '#181b24',
+                        accent: '#00c9ff',
+                        accent2: '#8b7aff',
+                        muted: '#9ca3af'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #08090e;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ultra-subtle static grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(0deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px),
+                repeating-linear-gradient(90deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(15, 17, 23, 0.4) 0%, rgba(15, 17, 23, 0.6) 100%);
+            backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(24, 27, 36, 0.8);
+            border-radius: 16px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 201, 255, 0.15);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 201, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .heading {
+            font-weight: 200;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            color: rgba(248, 249, 250, 0.95);
+        }
+
+        .subheading {
+            font-weight: 300;
+            letter-spacing: 0.02em;
+            color: rgba(156, 163, 175, 0.9);
+        }
+
+        .btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(0, 201, 255, 0.15) 0%, rgba(139, 122, 255, 0.15) 100%);
+            border: 1px solid rgba(0, 201, 255, 0.3);
+            border-radius: 8px;
+            color: rgba(248, 249, 250, 0.95);
+            font-weight: 300;
+            font-size: 0.8125rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            padding: 0.875rem 2rem;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 201, 255, 0.5);
+            background: linear-gradient(135deg, rgba(0, 201, 255, 0.2) 0%, rgba(139, 122, 255, 0.2) 100%);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 201, 255, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .delay-3 { animation-delay: 0.3s; opacity: 0; }
+        .delay-4 { animation-delay: 0.4s; opacity: 0; }
+
+        /* Navigation */
+        nav {
+            background: rgba(15, 17, 23, 0.8);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-bottom: 1px solid rgba(24, 27, 36, 0.8);
+        }
+
+        nav a {
+            color: rgba(156, 163, 175, 0.9);
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover, nav a.active {
+            color: rgba(0, 201, 255, 0.9);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-8">
+                    <a href="index.html" class="heading text-xl">ContentPassFactory</a>
+                    <div class="hidden md:flex gap-6 text-sm">
+                        <a href="index.html" class="active">Home</a>
+                        <a href="vault.html">Vault</a>
+                        <a href="reader.html">Reader</a>
+                        <a href="https://github.com/anthropics/tarotnew" target="_blank">Docs</a>
+                    </div>
+                </div>
+                <div id="walletStatus"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="relative z-10 pt-24">
+        <!-- Hero Section -->
+        <section class="max-w-7xl mx-auto px-6 py-24 text-center">
+            <div class="animate-fade-in-up">
+                <h1 class="heading text-6xl md:text-7xl mb-6">
+                    Decentralized Content<br>Distribution
+                </h1>
+                <p class="subheading text-xl md:text-2xl mb-12 max-w-3xl mx-auto">
+                    NFT-gated access to digital content on Polkadot. Own your passes, control your library.
+                </p>
+                <div class="flex gap-4 justify-center flex-wrap">
+                    <a href="vault.html" class="btn inline-block">Explore Vault</a>
+                    <a href="reader.html" class="btn inline-block">Start Reading</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="max-w-7xl mx-auto px-6 py-24">
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="glass-card p-8 animate-fade-in-up delay-1">
+                    <div class="text-4xl mb-4">🔐</div>
+                    <h3 class="heading text-2xl mb-3">NFT Access Control</h3>
+                    <p class="subheading text-sm">
+                        ERC-1155 passes grant verifiable on-chain access to premium content.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-card p-8 animate-fade-in-up delay-2">
+                    <div class="text-4xl mb-4">📦</div>
+                    <h3 class="heading text-2xl mb-3">TDP-1.0 Standard</h3>
+                    <p class="subheading text-sm">
+                        Tarot Deck Package format ensures cross-platform compatibility.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-card p-8 animate-fade-in-up delay-3">
+                    <div class="text-4xl mb-4">⛓️</div>
+                    <h3 class="heading text-2xl mb-3">Moonbase Alpha</h3>
+                    <p class="subheading text-sm">
+                        Built on Polkadot's EVM-compatible testnet with DEV tokens.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo Section -->
+        <section class="max-w-7xl mx-auto px-6 py-24">
+            <div class="glass-card p-12 text-center animate-fade-in-up delay-4">
+                <h2 class="heading text-4xl mb-6">Live Demo</h2>
+                <p class="subheading text-lg mb-8 max-w-2xl mx-auto">
+                    Experience decentralized content distribution with our tarot deck library. Browse 4 unique decks, mint free passes, and explore the TDP-1.0 protocol.
+                </p>
+                <div class="flex gap-4 justify-center flex-wrap">
+                    <a href="vault.html" class="btn">Browse Decks →</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="max-w-7xl mx-auto px-6 py-12 text-center border-t border-white/5 mt-24">
+            <p class="subheading text-sm">
+                Built with Solidity, Hardhat, and ethers.js<br>
+                Deployed to Moonbase Alpha at <span class="font-mono text-xs text-accent">0x76d3...2ADd</span>
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="wallet-persistence.js"></script>
+</body>
+</html>
