@@ -1,0 +1,324 @@
+import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+import { decodeAddress } from '@polkadot/util-crypto';
+import { u8aToHex } from '@polkadot/util';
+
+const STORAGE_KEY = 'tesserarx_wallet_connected';
+const CONTRACT_ADDRESS = "0xBFF26E227Cb5fb0Feb0D18250C0a655A6066C865"; // V2.1
+const MOONBASE_ALPHA_RPC = 'https://rpc.api.moonbase.moonbeam.network';
+const MOONBASE_ALPHA_WS = 'wss://wss.api.moonbase.moonbeam.network';
+const APP_NAME = 'Tesserarx';
+
+/**
+ * Unified Wallet Manager using Polkadot SDK
+ * Connects to Polkadot wallet extensions and provides EVM compatibility
+ */
+class WalletManager {
+    constructor() {
+        this.api = null;
+        this.selectedAccount = null;
+        this.injector = null;
+        this.evmAddress = null;
+        this.provider = null; // Will use for Web3/ethers compatibility
+        this.init();
+    }
+
+    async init() {
+        // Check for persisted connection
+        const wasConnected = localStorage.getItem(STORAGE_KEY) === 'true';
+
+        if (wasConnected) {
+            await this.autoConnect();
+        }
+
+        this.renderWalletStatus();
+    }
+
+    async autoConnect() {
+        try {
+            // Enable extensions
+            const extensions = await web3Enable(APP_NAME);
+
+            if (extensions.length === 0) {
+                localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+
+            // Get accounts
+            const accounts = await web3Accounts();
+
+            if (accounts.length > 0) {
+                // Connect to chain
+                await this.connectToChain();
+
+                // Select first account
+                await this.setupProvider(accounts[0]);
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        } catch (error) {
+            console.error('Auto-connect failed:', error);
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }
+
+    async connect() {
+        try {
+            // Enable web3 extensions
+            const extensions = await web3Enable(APP_NAME);
+
+            if (extensions.length === 0) {
+                const installLinks = [
+                    '• Polkadot.js: https://polkadot.js.org/extension/',
+                    '• Talisman: https://talisman.xyz/',
+                    '• SubWallet: https://subwallet.app/'
+                ].join('\n');
+
+                alert(`No Polkadot wallet extension detected.\n\nPlease install one of these wallets:\n\n${installLinks}`);
+                return false;
+            }
+
+            // Get all accounts
+            const accounts = await web3Accounts();
+
+            if (accounts.length === 0) {
+                alert('No accounts found in your wallet.\n\nPlease create or import an account in your Polkadot wallet extension.');
+                return false;
+            }
+
+            // Connect to Moonbase Alpha
+            await this.connectToChain();
+
+            // Setup provider with first account
+            await this.setupProvider(accounts[0]);
+
+            localStorage.setItem(STORAGE_KEY, 'true');
+            this.renderWalletStatus();
+
+            return true;
+        } catch (error) {
+            console.error('Connection error:', error);
+            alert('Failed to connect wallet: ' + error.message);
+            return false;
+        }
+    }
+
+    async connectToChain() {
+        if (this.api) return this.api;
+
+        try {
+            const provider = new WsProvider(MOONBASE_ALPHA_WS);
+            this.api = await ApiPromise.create({ provider });
+
+            await this.api.isReady;
+
+            const chain = await this.api.rpc.system.chain();
+            const version = await this.api.rpc.system.version();
+
+            console.log(`✅ Connected to ${chain} (v${version})`);
+
+            return this.api;
+        } catch (error) {
+            console.error('Failed to connect to Moonbase Alpha:', error);
+            throw new Error('Could not connect to Moonbase Alpha network');
+        }
+    }
+
+    async setupProvider(account) {
+        this.selectedAccount = account;
+
+        // Get injector for signing
+        this.injector = await web3FromAddress(account.address);
+
+        // Convert Substrate address to EVM address
+        this.evmAddress = this.substrateToEvm(account.address);
+
+        console.log('📱 Wallet connected:');
+        console.log('   Account:', account.meta.name || 'Unnamed');
+        console.log('   Substrate:', account.address);
+        console.log('   EVM:', this.evmAddress);
+
+        this.renderWalletStatus();
+    }
+
+    /**
+     * Convert Substrate address to EVM address for Moonbeam
+     * Takes the first 20 bytes of the decoded public key
+     */
+    substrateToEvm(substrateAddress) {
+        try {
+            const publicKey = decodeAddress(substrateAddress);
+            const evmBytes = publicKey.slice(0, 20);
+            return u8aToHex(evmBytes);
+        } catch (error) {
+            console.error('Address conversion failed:', error);
+            return null;
+        }
+    }
+
+    disconnect() {
+        this.selectedAccount = null;
+        this.injector = null;
+        this.evmAddress = null;
+        localStorage.removeItem(STORAGE_KEY);
+        this.renderWalletStatus();
+    }
+
+    renderWalletStatus() {
+        const statusDiv = document.getElementById('walletStatus');
+        if (!statusDiv) return;
+
+        if (this.selectedAccount) {
+            const displayName = this.selectedAccount.meta.name || 'Account';
+            const shortAddr = `${this.selectedAccount.address.slice(0, 6)}...${this.selectedAccount.address.slice(-4)}`;
+
+            statusDiv.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="text-sm font-mono text-accent">
+                        ${displayName} (${shortAddr})
+                    </div>
+                    <button
+                        onclick="walletManager.disconnect()"
+                        class="text-xs text-muted hover:text-accent transition-colors"
+                    >
+                        Disconnect
+                    </button>
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <button
+                    onclick="walletManager.connect()"
+                    class="btn text-xs px-4 py-2"
+                >
+                    Connect Wallet
+                </button>
+            `;
+        }
+    }
+
+    isConnected() {
+        return this.selectedAccount !== null && this.api !== null;
+    }
+
+    /**
+     * Get Web3 provider for ethers.js compatibility
+     * Uses Moonbeam's JSON-RPC endpoint
+     */
+    async getWeb3Provider() {
+        // For ethers.js, we'll use JsonRpcProvider with Moonbeam RPC
+        // The actual signing will need to be done through the Polkadot extension
+        const { ethers } = window;
+        if (!ethers) {
+            throw new Error('ethers.js not loaded');
+        }
+
+        if (!this.provider) {
+            this.provider = new ethers.providers.JsonRpcProvider(MOONBASE_ALPHA_RPC);
+        }
+
+        return this.provider;
+    }
+
+    /**
+     * Get a signer for EVM transactions
+     * Checks for Ethereum provider injection from Polkadot wallets (Talisman, SubWallet)
+     */
+    async getSigner() {
+        if (!this.isConnected()) {
+            throw new Error('Wallet not connected');
+        }
+
+        // Check if wallet injected an Ethereum provider (Talisman, SubWallet do this)
+        if (window.ethereum) {
+            const { ethers } = window;
+            const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+            return web3Provider.getSigner();
+        }
+
+        // Fallback: use custom signer (limited functionality)
+        const provider = await this.getWeb3Provider();
+        return new PolkadotEVMSigner(this, provider);
+    }
+
+    /**
+     * Get contract instance with ABI
+     */
+    async getContract(abi) {
+        if (!this.isConnected()) {
+            return null;
+        }
+
+        const { ethers } = window;
+        if (!ethers) {
+            throw new Error('ethers.js not loaded');
+        }
+
+        // Try to get a signer for write operations
+        try {
+            const signer = await this.getSigner();
+            return new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
+        } catch (error) {
+            // Fallback to provider for read-only
+            console.warn('Could not get signer, contract will be read-only');
+            const provider = await this.getWeb3Provider();
+            return new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
+        }
+    }
+
+    getEvmAddress() {
+        return this.evmAddress;
+    }
+
+    getSubstrateAddress() {
+        return this.selectedAccount?.address;
+    }
+
+    getAccount() {
+        return this.selectedAccount;
+    }
+
+    getApi() {
+        return this.api;
+    }
+}
+
+/**
+ * Custom Signer that bridges Polkadot extension with ethers.js
+ */
+class PolkadotEVMSigner extends window.ethers.Signer {
+    constructor(walletManager, provider) {
+        super();
+        this.walletManager = walletManager;
+        this._provider = provider;
+    }
+
+    async getAddress() {
+        return this.walletManager.getEvmAddress();
+    }
+
+    async signMessage(message) {
+        // Sign message using Polkadot extension
+        const { u8aToHex, stringToU8a } = await import('@polkadot/util');
+        const messageU8a = typeof message === 'string' ? stringToU8a(message) : message;
+
+        const signature = await this.walletManager.injector.signer.signRaw({
+            address: this.walletManager.getSubstrateAddress(),
+            data: u8aToHex(messageU8a),
+            type: 'bytes'
+        });
+
+        return signature.signature;
+    }
+
+    async signTransaction(transaction) {
+        throw new Error('Direct transaction signing not supported. Use contract methods.');
+    }
+
+    connect(provider) {
+        return new PolkadotEVMSigner(this.walletManager, provider);
+    }
+}
+
+export default WalletManager;
+export { CONTRACT_ADDRESS, MOONBASE_ALPHA_RPC, MOONBASE_ALPHA_WS };

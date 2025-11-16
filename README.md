@@ -4,6 +4,25 @@
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://tesserarx-demo.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Polkadot](https://img.shields.io/badge/Built%20on-Polkadot-E6007A)](https://polkadot.network/)
+
+---
+
+## 🚀 Polkadot Integration
+
+This project now integrates the **Polkadot SDK** to provide native Polkadot ecosystem support:
+
+- **Wallet Support**: Connect with Polkadot.js, Talisman, SubWallet, and other Polkadot-native wallets
+- **@polkadot/extension-dapp**: Native extension integration for account management
+- **@polkadot/api**: Direct connection to Moonbase Alpha parachain via WebSocket
+- **EVM Compatibility**: Seamless interaction with EVM contracts through Moonbeam's unified accounts
+
+### Supported Wallets
+
+✅ **Polkadot.js Extension** - [Install](https://polkadot.js.org/extension/)
+✅ **Talisman** - [Install](https://talisman.xyz/)
+✅ **SubWallet** - [Install](https://subwallet.app/)
+✅ Any Polkadot-compatible wallet with EVM support
 
 ---
 
@@ -15,6 +34,7 @@ This repository contains **reference consumer applications** demonstrating how t
 - Verify access via ERC-1155 passes
 - Decrypt and display TDP-1.0 packages
 - Manage user collections
+- **NEW**: Connect via Polkadot wallet extensions
 
 **Live Demo**: [https://tesserarx-demo.vercel.app](https://tesserarx-demo.vercel.app)
 
@@ -56,11 +76,22 @@ This repository contains **reference consumer applications** demonstrating how t
 git clone https://github.com/jordyarms/tesserarx-demo.git
 cd tesserarx-demo
 
-# Serve locally
+# Install dependencies
+npm install
+
+# Build Polkadot SDK bundle
+npm run build:lib
+
+# Start development server
+npm run dev
+
+# Or serve the public directory directly
 npx serve public
 
 # Open in browser
-open http://localhost:3000
+open http://localhost:5173  # Vite dev server
+# or
+open http://localhost:3000  # Static serve
 ```
 
 ### Configuration
