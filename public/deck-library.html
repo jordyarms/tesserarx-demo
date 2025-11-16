@@ -30,6 +30,7 @@
     
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="dist/tesserarx-polkadot.umd.cjs"></script>
     <script src="content-loader.js"></script>
 </head>
 <body>
@@ -205,42 +206,30 @@
         // DECKS array now loaded dynamically from contract + manifest URIs
         // See content-loader.js for implementation
 
-        let provider, signer, contract, userAddress;
+        let provider, contract, userAddress;
 
         async function connectWallet() {
-            if (!window.ethereum) {
-                alert('MetaMask required for connection.');
-                return;
-            }
-
             try {
-                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                userAddress = accounts[0];
+                // Use Polkadot wallet manager
+                const connected = await walletManager.connect();
 
-                try {
-                    await ethereum.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: MOONBASE_ALPHA.chainId }]
-                    });
-                } catch (switchError) {
-                    if (switchError.code === 4902) {
-                        await ethereum.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [MOONBASE_ALPHA]
-                        });
-                    }
+                if (!connected) {
+                    return;
                 }
 
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                signer = provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                // Get provider and contract from wallet manager
+                provider = await walletManager.getWeb3Provider();
+                contract = await walletManager.getContract(CONTRACT_ABI);
+                userAddress = walletManager.getEvmAddress();
 
                 document.getElementById('connectButton').style.display = 'none';
                 document.getElementById('walletInfo').classList.remove('hidden');
+
+                const accountName = walletManager.getAccount()?.meta?.name || 'Account';
                 document.getElementById('walletInfo').innerHTML = `
                     <div class="inline-flex items-center gap-2 mono text-caption text-accent">
                         <div class="status"></div>
-                        <span>Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}</span>
+                        <span>Connected: ${accountName} (${userAddress.slice(0, 6)}...${userAddress.slice(-4)})</span>
                     </div>
                 `;
 
@@ -248,7 +237,7 @@
 
             } catch (error) {
                 console.error('Connection error:', error);
-                alert('Connection failed.');
+                alert('Connection failed: ' + error.message);
             }
         }
 
@@ -518,13 +507,14 @@
             return `${address.slice(0, 6)}...${address.slice(-4)}`;
         }
 
-        if (window.ethereum && window.ethereum.selectedAddress) {
-            connectWallet();
-        }
+        // Auto-connect if wallet was previously connected
+        window.addEventListener('load', async () => {
+            if (walletManager.isConnected()) {
+                await connectWallet();
+            }
+        });
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <script src="wallet-persistence.js"></script>
     <script src="nav-component.js"></script>
 </body>
 </html>

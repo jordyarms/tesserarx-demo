@@ -1,6 +1,8 @@
 {
   "version": 2,
   "public": true,
+  "buildCommand": "npm run build:lib",
+  "outputDirectory": "public",
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/vault", "destination": "/vault.html" },

@@ -1,0 +1,22 @@
+{
+  "name": "tesserarx-demo",
+  "version": "1.0.0",
+  "description": "Tarot content distribution platform on Polkadot",
+  "type": "module",
+  "scripts": {
+    "build": "npm run build:lib && vite build",
+    "build:lib": "vite build --config vite.lib.config.js",
+    "dev": "npm run build:lib && vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@polkadot/api": "^12.1.1",
+    "@polkadot/api-contract": "^12.1.1",
+    "@polkadot/extension-dapp": "^0.48.1",
+    "@polkadot/util": "^13.1.1",
+    "@polkadot/util-crypto": "^13.1.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.2"
+  }
+}
