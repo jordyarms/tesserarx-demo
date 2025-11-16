@@ -5,9 +5,9 @@ node_modules
 # Build outputs
 dist
 !public/dist
-!public/dist/tesserarx-polkadot.umd.cjs
+!public/dist/tesserarx-polkadot.iife.js
 public/dist/*
-!public/dist/tesserarx-polkadot.umd.cjs
+!public/dist/tesserarx-polkadot.iife.js
 build
 
 # IDEs
