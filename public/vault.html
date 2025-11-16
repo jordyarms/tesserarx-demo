@@ -30,6 +30,7 @@
     
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="content-loader.js"></script>
 </head>
 <body>
     <div class="grid-overlay"></div>
@@ -111,50 +112,8 @@
             "function contentCreators(uint256 contentId) view returns (address)"
         ];
 
-        const DECKS = [
-            {
-                contentId: 1,
-                name: "Waite-Smith Rider Tarot",
-                year: "1909",
-                creator: "Public Domain",
-                description: "Classic divination system featuring detailed illustrations across all 78 cards. The most recognized tarot deck worldwide.",
-                free: true,
-                tradition: "RWS",
-                license: "Public Domain"
-            },
-            {
-                contentId: 2,
-                name: "Tarot de Marseille",
-                year: "1760",
-                creator: "Public Domain",
-                description: "Historic French pattern with traditional woodblock-style imagery. An essential reference for tarot scholarship.",
-                free: true,
-                tradition: "Marseille",
-                license: "Public Domain"
-            },
-            {
-                contentId: 5,
-                name: "Anecdotes Tarot",
-                year: "2024",
-                creator: "Yve Lepkowski",
-                description: "Contemporary interpretation with personal narratives and modern imagery. Available under Creative Commons.",
-                free: true,
-                tradition: "Modern",
-                license: "CC-BY-SA 4.0"
-            },
-            {
-                contentId: 6,
-                name: "Clown Town Tarot",
-                year: "2024",
-                creator: "Yve Lepkowski",
-                description: "Whimsical circus-themed deck with bold colors and playful interpretations. Available under Creative Commons.",
-                free: true,
-                tradition: "Modern",
-                license: "CC-BY-SA 4.0"
-            }
-        ];
-
         let provider, signer, contract, userAddress;
+        let ownedDecks = [];
 
         async function connectWallet() {
             if (!window.ethereum) {
@@ -203,48 +162,67 @@
 
         async function loadLibrary() {
             const grid = document.getElementById('deckGrid');
-            grid.innerHTML = '';
+            grid.innerHTML = '<div class="col-span-full text-center py-20"><div class="status mx-auto mb-4"></div><div class="mono text-caption text-muted">Loading your collection...</div></div>';
 
-            let owned = 0, free = 0;
+            try {
+                // Load only owned decks using ContentLoader
+                ownedDecks = await ContentLoader.loadOwnedDecks(contract, userAddress);
 
-            for (const [index, deck] of DECKS.entries()) {
-                const balance = await contract.balanceOf(userAddress, deck.contentId);
-                const hasPass = balance.toNumber() > 0;
-                if (hasPass) owned++;
-                if (deck.free) free++;
+                grid.innerHTML = '';
 
-                try {
-                    const info = await contract.getContentInfo(deck.contentId);
-                    deck.totalMinted = info.currentSupply.toNumber();
-                } catch (e) {
-                    deck.totalMinted = 0;
+                if (ownedDecks.length === 0) {
+                    grid.innerHTML = `
+                        <div class="col-span-full text-center py-20">
+                            <div class="mono text-2xl text-muted mb-4">No decks owned yet</div>
+                            <div class="mono text-caption text-muted/70 mb-8">Visit the Market to claim free decks or purchase passes</div>
+                            <a href="deck-library.html" class="btn text-text px-8 py-4 rounded-xl inline-block">
+                                <span class="relative z-10">Browse Market</span>
+                            </a>
+                        </div>
+                    `;
+                    document.getElementById('totalDecks').textContent = '0';
+                    document.getElementById('ownedDecks').textContent = '0';
+                    document.getElementById('freeDecks').textContent = '0';
+                    return;
                 }
 
-                const card = createCard(deck, hasPass);
-                card.style.animationDelay = `${0.3 + index * 0.08}s`;
-                grid.appendChild(card);
-            }
+                // Count free decks among owned
+                let freeCount = ownedDecks.filter(d => d.free).length;
 
-            document.getElementById('totalDecks').textContent = DECKS.length;
-            document.getElementById('ownedDecks').textContent = owned;
-            document.getElementById('freeDecks').textContent = free;
+                // Display only owned decks
+                for (const [index, deck] of ownedDecks.entries()) {
+                    const card = createCard(deck, true); // hasPass is always true in vault
+                    card.style.animationDelay = `${0.3 + index * 0.08}s`;
+                    grid.appendChild(card);
+                }
+
+                // Update metrics - all decks shown are owned
+                document.getElementById('totalDecks').textContent = ownedDecks.length;
+                document.getElementById('ownedDecks').textContent = ownedDecks.length;
+                document.getElementById('freeDecks').textContent = freeCount;
+
+            } catch (error) {
+                console.error('Failed to load collection:', error);
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-20">
+                        <div class="mono text-xl text-red-400 mb-4">Error loading collection</div>
+                        <div class="mono text-caption text-muted/70">${error.message}</div>
+                    </div>
+                `;
+            }
         }
 
         function createCard(deck, hasPass) {
             const el = document.createElement('div');
             el.className = 'glass rounded-3xl p-8 hover-lift fade-in relative';
 
-            const statusBadge = hasPass
-                ? `<div class="badge border-accent/20 bg-accent/5 text-accent/90">Owned</div>`
-                : deck.free
-                ? `<div class="badge border-green-400/20 bg-green-400/5 text-green-400/90">Free</div>`
-                : `<div class="badge border-accent2/20 bg-accent2/5 text-accent2/90">${deck.price}</div>`;
+            // In vault, all cards are owned - show balance if > 1
+            const statusBadge = deck.balance > 1
+                ? `<div class="badge border-accent/20 bg-accent/5 text-accent/90">Owned × ${deck.balance}</div>`
+                : `<div class="badge border-accent/20 bg-accent/5 text-accent/90">Owned</div>`;
 
-            const action = hasPass
-                ? `<button onclick="openDeck(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Access Deck</span></button>`
-                : deck.free
-                ? `<button onclick="claim(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Claim Pass</span></button>`
-                : `<button onclick="purchase(${deck.contentId}, '${deck.price}')" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Purchase Pass</span></button>`;
+            // Always show "Access Deck" button in vault
+            const action = `<button onclick="openDeck(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Access Deck</span></button>`;
 
             el.innerHTML = `
                 <div class="corner tl"></div>
@@ -299,45 +277,6 @@
             `;
 
             return el;
-        }
-
-        async function claim(id) {
-            try {
-                if (confirm('Claim this free deck pass?')) {
-                    const tx = await contract.claim(id);
-                    alert('Claiming pass...');
-                    await tx.wait();
-                    alert('Pass claimed successfully!');
-                    await loadLibrary();
-                }
-            } catch (error) {
-                console.error('Claim error:', error);
-                if (error.message.includes('Already claimed')) {
-                    alert('You have already claimed this deck.');
-                } else if (error.message.includes('Content is not free')) {
-                    alert('This deck is not free. Please use the purchase option.');
-                } else {
-                    alert('Claim failed: ' + error.message);
-                }
-            }
-        }
-
-        async function purchase(id, price) {
-            try {
-                const value = parseFloat(price.split(' ')[0]);
-                const wei = ethers.utils.parseEther(value.toString());
-                const creator = await contract.contentCreators(id);
-
-                if (confirm(`Purchase pass for ${price}?`)) {
-                    const tx = await signer.sendTransaction({ to: creator, value: wei });
-                    alert('Processing payment...');
-                    await tx.wait();
-                    alert('Payment confirmed.\n\nCreator will mint your pass.');
-                    await loadLibrary();
-                }
-            } catch (error) {
-                alert('Transaction failed: ' + error.message);
-            }
         }
 
         function openDeck(id) {

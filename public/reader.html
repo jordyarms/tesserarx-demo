@@ -231,8 +231,23 @@
 
                 statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Parsing Manifest</span></div>';
 
-                // Load manifest
-                const manifestText = await zip.file('manifest.json').async('string');
+                // Load manifest - try root first, then subdirectory
+                let manifestText;
+                let pathPrefix = '';
+                const manifestFile = zip.file('manifest.json');
+                if (manifestFile) {
+                    manifestText = await manifestFile.async('string');
+                } else {
+                    // Look for manifest in subdirectory
+                    const files = Object.keys(zip.files);
+                    const manifestPath = files.find(f => f.endsWith('manifest.json') && !f.includes('__MACOSX'));
+                    if (!manifestPath) {
+                        throw new Error('manifest.json not found in package');
+                    }
+                    manifestText = await zip.file(manifestPath).async('string');
+                    // Extract the path prefix (e.g., "anecdotes-tarot/")
+                    pathPrefix = manifestPath.replace('manifest.json', '');
+                }
                 const manifest = JSON.parse(manifestText);
 
                 statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Loading Images</span></div>';
@@ -240,7 +255,7 @@
                 // Load all card images
                 const cards = [];
                 for (const file of manifest.files.image_list) {
-                    const imageData = await zip.file(file.path).async('base64');
+                    const imageData = await zip.file(pathPrefix + file.path).async('base64');
                     const ext = file.filename.split('.').pop().toLowerCase();
                     const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
 
