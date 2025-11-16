@@ -61,9 +61,12 @@ function parseDeckData(contentId, contractInfo, manifest) {
     const maxSupply = typeof contractInfo.maxSupply === 'number'
         ? contractInfo.maxSupply
         : contractInfo.maxSupply.toNumber();
-    const totalMinted = typeof contractInfo.totalMinted === 'number'
-        ? contractInfo.totalMinted
-        : contractInfo.totalMinted.toNumber();
+    // V2.1 uses currentSupply instead of totalMinted
+    const totalMinted = contractInfo.currentSupply !== undefined
+        ? (typeof contractInfo.currentSupply === 'number' ? contractInfo.currentSupply : contractInfo.currentSupply.toNumber())
+        : (contractInfo.totalMinted !== undefined
+            ? (typeof contractInfo.totalMinted === 'number' ? contractInfo.totalMinted : contractInfo.totalMinted.toNumber())
+            : 0);
 
     return {
         contentId,
@@ -78,7 +81,7 @@ function parseDeckData(contentId, contractInfo, manifest) {
         totalMinted,
         price: ethers.utils.formatEther(price),
         priceWei: price,
-        free: price.isZero(),
+        free: contractInfo.isFree !== undefined ? contractInfo.isFree : price.isZero(),
         legacy: isLegacy(manifest),
         external_url: manifest?.external_url || ''
     };
@@ -104,12 +107,14 @@ async function loadDeck(contract, contentId) {
             manifest = await fetchManifest(version.manifestURI);
         }
 
-        // Parse combined data
+        // Parse combined data (V2.1 contract structure)
         return parseDeckData(contentId, {
             name: info.name,
+            creator: info.creator,
+            isFree: info.isFree,
+            price: info.price,
             maxSupply: info.maxSupply,
-            totalMinted: info.totalMinted,
-            price: info.price
+            currentSupply: info.currentSupply
         }, manifest);
     } catch (error) {
         console.warn(`Failed to load deck ${contentId}:`, error);
