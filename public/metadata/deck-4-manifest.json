@@ -1,0 +1,38 @@
+{
+  "name": "Clown Town Tarot (Legacy)",
+  "description": "Original limited edition. Replaced by unlimited CC-BY-SA version.",
+  "image": "https://tesserarx-demo.vercel.app/thumbnails/clown-town-tarot.jpg",
+  "attributes": [
+    {
+      "trait_type": "Year",
+      "value": "2024"
+    },
+    {
+      "trait_type": "Creator",
+      "value": "Yve Lepkowski"
+    },
+    {
+      "trait_type": "Tradition",
+      "value": "Modern"
+    },
+    {
+      "trait_type": "License",
+      "value": "All Rights Reserved"
+    },
+    {
+      "trait_type": "Card Count",
+      "value": "78"
+    },
+    {
+      "trait_type": "Language",
+      "value": "English"
+    },
+    {
+      "trait_type": "Edition",
+      "value": "Legacy"
+    }
+  ],
+  "external_url": "https://github.com/jordyarms/tesserarx-demo",
+  "tdp_version": "1.0",
+  "content_type": "tarot-deck"
+}

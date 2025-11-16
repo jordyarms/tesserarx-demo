@@ -1,0 +1,34 @@
+{
+  "name": "Tarot de Marseille",
+  "description": "Historic French pattern with traditional woodblock-style imagery. An essential reference for tarot scholarship.",
+  "image": "https://tesserarx-demo.vercel.app/thumbnails/tarot-de-marseille.jpg",
+  "attributes": [
+    {
+      "trait_type": "Year",
+      "value": "1760"
+    },
+    {
+      "trait_type": "Creator",
+      "value": "Public Domain"
+    },
+    {
+      "trait_type": "Tradition",
+      "value": "Marseille"
+    },
+    {
+      "trait_type": "License",
+      "value": "Public Domain"
+    },
+    {
+      "trait_type": "Card Count",
+      "value": "78"
+    },
+    {
+      "trait_type": "Language",
+      "value": "French"
+    }
+  ],
+  "external_url": "https://en.wikipedia.org/wiki/Tarot_of_Marseilles",
+  "tdp_version": "1.0",
+  "content_type": "tarot-deck"
+}

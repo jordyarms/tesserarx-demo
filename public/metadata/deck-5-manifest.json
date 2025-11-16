@@ -1,0 +1,34 @@
+{
+  "name": "Anecdotes Tarot",
+  "description": "Contemporary interpretation with personal narratives and modern imagery. Available under Creative Commons.",
+  "image": "https://tesserarx-demo.vercel.app/thumbnails/anecdotes-tarot.jpg",
+  "attributes": [
+    {
+      "trait_type": "Year",
+      "value": "2024"
+    },
+    {
+      "trait_type": "Creator",
+      "value": "Yve Lepkowski"
+    },
+    {
+      "trait_type": "Tradition",
+      "value": "Modern"
+    },
+    {
+      "trait_type": "License",
+      "value": "CC-BY-SA 4.0"
+    },
+    {
+      "trait_type": "Card Count",
+      "value": "78"
+    },
+    {
+      "trait_type": "Language",
+      "value": "English"
+    }
+  ],
+  "external_url": "https://github.com/jordyarms/tesserarx-demo",
+  "tdp_version": "1.0",
+  "content_type": "tarot-deck"
+}

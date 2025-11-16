@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberMystic</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <title>Deck Library — Tesserarx</title>
+    <meta name="description" content="Browse and claim tarot deck passes on Moonbase Alpha. Free and paid content powered by blockchain.">
+    
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,256 +21,16 @@
                         border: '#181b24',
                         accent: '#00c9ff',
                         accent2: '#8b7aff',
-                        text: '#f8f9fa',
-                        muted: '#9ca3af',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                        display: ['Roobert', 'Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'Menlo', 'monospace'],
-                    },
-                    fontSize: {
-                        'micro': ['0.625rem', { lineHeight: '1', letterSpacing: '0.08em' }],
-                        'caption': ['0.75rem', { lineHeight: '1.2', letterSpacing: '0.05em' }],
+                        muted: '#9ca3af'
                     }
                 }
             }
         }
     </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-
-        body {
-            background: #08090e;
-            color: #f8f9fa;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-weight: 300;
-            line-height: 1.6;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Ultra-subtle static grid */
-        .grid-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image:
-                linear-gradient(rgba(0,201,255,0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,201,255,0.015) 1px, transparent 1px);
-            background-size: 60px 60px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* Refined glass */
-        .glass {
-            background: rgba(15, 17, 23, 0.4);
-            backdrop-filter: blur(40px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            position: relative;
-        }
-
-        .glass::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(0,201,255,0.2) 50%,
-                transparent);
-            opacity: 0;
-            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .glass:hover::before { opacity: 1; }
-
-        /* Sophisticated hover */
-        .hover-lift {
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .hover-lift:hover {
-            transform: translateY(-4px);
-            border-color: rgba(0, 201, 255, 0.15);
-            box-shadow:
-                0 20px 40px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(0, 201, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-
-        /* Premium button */
-        .btn {
-            background: linear-gradient(135deg, rgba(0,201,255,0.12) 0%, rgba(139,122,255,0.12) 100%);
-            border: 1px solid rgba(0, 201, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 400;
-            letter-spacing: 0.02em;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(255, 255, 255, 0.1),
-                transparent);
-            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .btn:hover::before { left: 100%; }
-
-        .btn:hover {
-            border-color: rgba(0, 201, 255, 0.4);
-            box-shadow:
-                0 12px 24px rgba(0, 201, 255, 0.15),
-                0 0 0 1px rgba(0, 201, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            transform: translateY(-1px);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-            transition-duration: 0.1s;
-        }
-
-        /* Typography refinement */
-        .heading {
-            font-weight: 200;
-            letter-spacing: -0.03em;
-            line-height: 1.1;
-        }
-
-        .mono {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 500;
-            letter-spacing: 0.03em;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* Elegant animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(32px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in {
-            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            opacity: 0;
-        }
-
-
-
-        /* Minimal HUD corners */
-        .corner {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            opacity: 0.3;
-            transition: opacity 0.4s ease;
-        }
-
-        .corner::before,
-        .corner::after {
-            content: '';
-            position: absolute;
-            background: rgba(0, 201, 255, 0.4);
-        }
-
-        .corner.tl::before { top: 0; left: 0; width: 100%; height: 1px; }
-        .corner.tl::after { top: 0; left: 0; width: 1px; height: 100%; }
-
-        .corner.tr::before { top: 0; right: 0; width: 100%; height: 1px; }
-        .corner.tr::after { top: 0; right: 0; width: 1px; height: 100%; }
-
-        .corner.bl::before { bottom: 0; left: 0; width: 100%; height: 1px; }
-        .corner.bl::after { bottom: 0; left: 0; width: 1px; height: 100%; }
-
-        .corner.br::before { bottom: 0; right: 0; width: 100%; height: 1px; }
-        .corner.br::after { bottom: 0; right: 0; width: 1px; height: 100%; }
-
-        .glass:hover .corner { opacity: 0.8; }
-
-        /* Status indicator - refined */
-        .status {
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: #00c9ff;
-            box-shadow: 0 0 8px rgba(0, 201, 255, 0.8);
-            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.95); }
-        }
-
-        /* Badge refinement */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.6875rem;
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            font-family: 'JetBrains Mono', monospace;
-            border: 1px solid;
-            transition: all 0.3s ease;
-        }
-
-        /* Divider */
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(255, 255, 255, 0.06) 20%,
-                rgba(255, 255, 255, 0.06) 80%,
-                transparent);
-        }
-
-        /* Selection styling */
-        ::selection {
-            background: rgba(0, 201, 255, 0.2);
-            color: #fff;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #08090e; }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 201, 255, 0.2);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 201, 255, 0.3); }
-    </style>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="content-loader.js"></script>
 </head>
 <body>
     <div class="grid-overlay"></div>
@@ -290,7 +55,7 @@
 
                     <!-- Subtitle -->
                     <p class="text-muted text-sm md:text-base mb-8" style="letter-spacing: 0.08em">
-                        Content Access Protocol <span class="text-muted/50 mx-2">/</span> Vault Interface
+                        Content Access Protocol <span class="text-muted/50 mx-2">/</span> Deck Library
                     </p>
 
                     <!-- TDP Badge -->
@@ -468,74 +233,8 @@
             "function withdraw() external"
         ];
 
-        const DECKS = [
-            {
-                contentId: 1,
-                name: "Waite-Smith Rider Tarot",
-                year: "1909",
-                creator: "Public Domain",
-                description: "Classic divination system featuring detailed illustrations across all 78 cards. The most recognized tarot deck worldwide.",
-                free: true,
-                tradition: "RWS",
-                license: "Public Domain"
-            },
-            {
-                contentId: 2,
-                name: "Tarot de Marseille",
-                year: "1760",
-                creator: "Public Domain",
-                description: "Historic French pattern with traditional woodblock-style imagery. An essential reference for tarot scholarship.",
-                free: true,
-                tradition: "Marseille",
-                license: "Public Domain"
-            },
-            {
-                contentId: 3,
-                name: "Anecdotes Tarot",
-                year: "2024",
-                creator: "Yve Lepkowski",
-                description: "Original limited edition. Replaced by unlimited CC-BY-SA version.",
-                free: false,
-                price: "0.01 DEV",
-                maxSupply: 100,
-                tradition: "Modern",
-                license: "All Rights Reserved",
-                legacy: true
-            },
-            {
-                contentId: 4,
-                name: "Clown Town Tarot",
-                year: "2024",
-                creator: "Yve Lepkowski",
-                description: "Original limited edition. Replaced by unlimited CC-BY-SA version.",
-                free: false,
-                price: "0.02 DEV",
-                maxSupply: 50,
-                tradition: "Modern",
-                license: "All Rights Reserved",
-                legacy: true
-            },
-            {
-                contentId: 5,
-                name: "Anecdotes Tarot",
-                year: "2024",
-                creator: "Yve Lepkowski",
-                description: "Contemporary interpretation with personal narratives and modern imagery. Available under Creative Commons.",
-                free: true,
-                tradition: "Modern",
-                license: "CC-BY-SA 4.0"
-            },
-            {
-                contentId: 6,
-                name: "Clown Town Tarot",
-                year: "2024",
-                creator: "Yve Lepkowski",
-                description: "Whimsical circus-themed deck with bold colors and playful interpretations. Available under Creative Commons.",
-                free: true,
-                tradition: "Modern",
-                license: "CC-BY-SA 4.0"
-            }
-        ];
+        // DECKS array now loaded dynamically from contract + manifest URIs
+        // See content-loader.js for implementation
 
         let provider, signer, contract, userAddress;
 
@@ -586,31 +285,37 @@
 
         async function loadLibrary() {
             const grid = document.getElementById('deckGrid');
-            grid.innerHTML = '';
+            grid.innerHTML = '<div class="col-span-full text-center py-20"><div class="status mx-auto mb-4"></div><div class="mono text-caption text-muted">Loading decks from blockchain...</div></div>';
 
-            let owned = 0, free = 0;
+            try {
+                // Load all decks dynamically from contract + manifests
+                const decks = await ContentLoader.loadAllDecks(contract);
 
-            for (const [index, deck] of DECKS.entries()) {
-                const balance = await contract.balanceOf(userAddress, deck.contentId);
-                const hasPass = balance.toNumber() > 0;
-                if (hasPass) owned++;
-                if (deck.free) free++;
+                grid.innerHTML = '';
+                let owned = 0, free = 0;
 
-                try {
-                    const info = await contract.getContentInfo(deck.contentId);
-                    deck.totalMinted = info.totalMinted.toNumber();
-                } catch (e) {
-                    deck.totalMinted = 0;
+                for (const [index, deck] of decks.entries()) {
+                    // Check ownership
+                    const balance = await contract.balanceOf(userAddress, deck.contentId);
+                    const hasPass = balance.toNumber() > 0;
+                    if (hasPass) owned++;
+                    if (deck.free) free++;
+
+                    // Create and append card
+                    const card = createCard(deck, hasPass);
+                    card.style.animationDelay = `${0.3 + index * 0.08}s`;
+                    grid.appendChild(card);
                 }
 
-                const card = createCard(deck, hasPass);
-                card.style.animationDelay = `${0.3 + index * 0.08}s`;
-                grid.appendChild(card);
-            }
+                // Update stats
+                document.getElementById('totalDecks').textContent = decks.length;
+                document.getElementById('ownedDecks').textContent = owned;
+                document.getElementById('freeDecks').textContent = free;
 
-            document.getElementById('totalDecks').textContent = DECKS.length;
-            document.getElementById('ownedDecks').textContent = owned;
-            document.getElementById('freeDecks').textContent = free;
+            } catch (error) {
+                console.error('Failed to load library:', error);
+                grid.innerHTML = '<div class="col-span-full text-center py-20"><div class="mono text-caption text-red-400">Failed to load decks. Please refresh.</div></div>';
+            }
         }
 
         function createCard(deck, hasPass) {
@@ -621,13 +326,13 @@
                 ? `<div class="badge border-accent/20 bg-accent/5 text-accent/90">Owned</div>`
                 : deck.free
                 ? `<div class="badge border-green-400/20 bg-green-400/5 text-green-400/90">Free</div>`
-                : `<div class="badge border-accent2/20 bg-accent2/5 text-accent2/90">${deck.price}</div>`;
+                : `<div class="badge border-accent2/20 bg-accent2/5 text-accent2/90">${deck.price} DEV</div>`;
 
             const action = hasPass
                 ? `<button onclick="openDeck(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Access Deck</span></button>`
                 : deck.free
                 ? `<button onclick="claim(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Claim Pass</span></button>`
-                : `<button onclick="purchase(${deck.contentId}, '${deck.price}')" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Purchase Pass</span></button>`;
+                : `<button onclick="openPurchaseModal(${deck.contentId}, '${deck.price} DEV')" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Purchase Pass</span></button>`;
 
             el.innerHTML = `
                 <div class="corner tl"></div>
@@ -732,7 +437,7 @@
         }
 
         function openDeck(id) {
-            window.location.href = `tarot-reader-real.html?contentId=${id}`;
+            window.location.href = `reader.html?contentId=${id}`;
         }
 
         // V2.1 Purchase Modal Functions
