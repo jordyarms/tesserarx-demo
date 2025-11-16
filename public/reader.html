@@ -31,6 +31,7 @@
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="content-loader.js"></script>
 </head>
 <body class="min-h-screen text-gray-200">
     <div class="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24" style="padding-top: 3rem; padding-bottom: 3rem;">
@@ -63,11 +64,7 @@
             <p class="label mb-4">Step 2</p>
             <h2 class="heading text-2xl mb-6">Select Deck</h2>
             <select id="deckSelect" onchange="loadSelectedDeck()" class="elegant-select w-full max-w-md mx-auto mb-6 text-center cursor-pointer">
-                <option value="">— Choose Deck —</option>
-                <option value="waite-smith-rider">WAITE-SMITH RIDER [1909] · ID:13</option>
-                <option value="tarot-de-marseille">TAROT DE MARSEILLE [1760] · ID:14</option>
-                <option value="anecdotes-tarot">ANECDOTES TAROT [YVE] · ID:17</option>
-                <option value="clown-town-tarot">CLOWN TOWN TAROT [YVE] · ID:18</option>
+                <option value="">— Loading your decks... —</option>
             </select>
             <div id="deckInfo" class="text-sm"></div>
             <div id="loadingStatus" class="mt-6"></div>
@@ -106,35 +103,15 @@
     <script>
         let currentDeck = null;
         let drawnCards = [];
-
-        const DECK_URLS = {
-            'waite-smith-rider': 'tdp-packages/waite-smith-rider.zip',
-            'tarot-de-marseille': 'tdp-packages/tarot-de-marseille.zip',
-            'anecdotes-tarot': 'tdp-packages/anecdotes-tarot.zip',
-            'clown-town-tarot': 'tdp-packages/clown-town-tarot.zip'
-        };
-
-        const DECK_TO_CONTENT_ID = {
-            'waite-smith-rider': 13,
-            'tarot-de-marseille': 14,
-            'anecdotes-tarot': 17,
-            'clown-town-tarot': 18
-        };
-
-        const CONTRACT_ADDRESS = "0xBFF26E227Cb5fb0Feb0D18250C0a655A6066C865"; // V2.1
-        const CONTRACT_ABI = [
-            "function balanceOf(address account, uint256 id) view returns (uint256)"
-        ];
+        let ownedDecks = [];
 
         let provider, signer, contract, userAddress;
 
-        const MOONBASE_ALPHA = {
-            chainId: '0x507',
-            chainName: 'Moonbase Alpha',
-            nativeCurrency: { name: 'DEV', symbol: 'DEV', decimals: 18 },
-            rpcUrls: ['https://rpc.api.moonbase.moonbeam.network'],
-            blockExplorerUrls: ['https://moonbase.moonscan.io/']
-        };
+        const CONTRACT_ABI = [
+            "function balanceOf(address account, uint256 id) view returns (uint256)",
+            "function getActiveVersion(uint256 contentId) view returns (tuple(string payloadURI, string specificationURI, string manifestURI, uint256 timestamp, string reason, address updatedBy))",
+            "function getContentInfo(uint256 contentId) view returns (address creator, string name, bool isFree, uint256 price, uint256 referralBasisPoints, uint256 maxSupply, uint256 currentSupply)"
+        ];
 
         async function connectWallet() {
             if (!window.ethereum) {
@@ -149,20 +126,20 @@
                 try {
                     await ethereum.request({
                         method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: MOONBASE_ALPHA.chainId }]
+                        params: [{ chainId: window.MOONBASE_ALPHA.chainId }]
                     });
                 } catch (switchError) {
                     if (switchError.code === 4902) {
                         await ethereum.request({
                             method: 'wallet_addEthereumChain',
-                            params: [MOONBASE_ALPHA]
+                            params: [window.MOONBASE_ALPHA]
                         });
                     }
                 }
 
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
-                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                contract = new ethers.Contract(window.CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
                 document.getElementById('connectButton').style.display = 'none';
                 document.getElementById('walletInfo').innerHTML = `
@@ -173,53 +150,78 @@
                 `;
                 document.getElementById('deckSelector').classList.remove('hidden');
 
+                // Load owned decks
+                await loadOwnedDecks();
+
             } catch (error) {
                 console.error('Connection error:', error);
                 alert('Connection failed: ' + error.message);
             }
         }
 
-        async function loadSelectedDeck() {
+        async function loadOwnedDecks() {
             const selector = document.getElementById('deckSelect');
-            const deckId = selector.value;
-
-            if (!deckId) return;
-
-            const contentId = DECK_TO_CONTENT_ID[deckId];
-            const statusDiv = document.getElementById('loadingStatus');
-
-            // Step 1: Verify pass ownership
-            statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Verifying Access</span></div>';
+            selector.innerHTML = '<option value="">— Loading your decks... —</option>';
 
             try {
-                const balance = await contract.balanceOf(userAddress, contentId);
-                const passCount = balance.toNumber();
+                // Use ContentLoader to get owned decks
+                ownedDecks = await ContentLoader.loadOwnedDecks(contract, userAddress);
 
-                if (passCount === 0) {
-                    statusDiv.innerHTML = `
-                        <div class="badge badge-error inline-flex mb-4">
-                            <span>Access Denied</span>
-                        </div>
-                        <p class="text-sm subheading">
-                            Visit <a href="deck-library.html" class="text-accent hover:text-accent2 underline transition-colors">Deck Vault</a> to acquire pass for Content ID ${contentId}
-                        </p>
-                    `;
+                if (ownedDecks.length === 0) {
+                    selector.innerHTML = '<option value="">— No decks owned. Visit Market to claim. —</option>';
                     return;
                 }
 
-                statusDiv.innerHTML = `
-                    <div class="badge badge-success inline-flex mb-3">
-                        <div class="status-dot"></div>
-                        <span>Access Granted · ${passCount} Pass${passCount > 1 ? 'es' : ''}</span>
-                    </div>
-                    <div class="badge badge-warning inline-flex">
-                        <div class="status-dot"></div>
-                        <span>Loading Package</span>
-                    </div>
-                `;
+                // Populate dropdown with owned decks
+                selector.innerHTML = '<option value="">— Choose Deck —</option>';
+                ownedDecks.forEach(deck => {
+                    const option = document.createElement('option');
+                    option.value = deck.contentId;
+                    option.textContent = `${deck.name.toUpperCase()} [${deck.year || deck.creator}] · ID:${deck.contentId}`;
+                    selector.appendChild(option);
+                });
 
-                // Step 2: Fetch ZIP file
-                const response = await fetch(DECK_URLS[deckId]);
+            } catch (error) {
+                console.error('Failed to load owned decks:', error);
+                selector.innerHTML = '<option value="">— Error loading decks —</option>';
+            }
+        }
+
+        async function loadSelectedDeck() {
+            const selector = document.getElementById('deckSelect');
+            const contentId = parseInt(selector.value);
+
+            if (!contentId) return;
+
+            // Find the deck data
+            const deckData = ownedDecks.find(d => d.contentId === contentId);
+            if (!deckData) {
+                console.error('Deck data not found for content ID:', contentId);
+                return;
+            }
+
+            const statusDiv = document.getElementById('loadingStatus');
+            statusDiv.innerHTML = `
+                <div class="badge badge-success inline-flex mb-3">
+                    <div class="status-dot"></div>
+                    <span>Access Granted · ${deckData.balance} Pass${deckData.balance > 1 ? 'es' : ''}</span>
+                </div>
+                <div class="badge badge-warning inline-flex">
+                    <div class="status-dot"></div>
+                    <span>Loading Package</span>
+                </div>
+            `;
+
+            try {
+                // Get the active version to fetch payload URI
+                const version = await contract.getActiveVersion(contentId);
+                const payloadURI = ContentLoader.resolveURI(version.payloadURI);
+
+                // Step 2: Fetch ZIP file from on-chain URI
+                const response = await fetch(payloadURI);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch deck: ${response.status} ${response.statusText}`);
+                }
                 const blob = await response.blob();
 
                 statusDiv.innerHTML = '<div class="badge badge-warning inline-flex"><div class="status-dot"></div><span>Extracting Data</span></div>';

@@ -3,8 +3,8 @@
  * Fetches deck metadata from blockchain contract and manifest URIs
  */
 
-// Known content IDs (can be expanded or made dynamic via event scanning)
-const KNOWN_CONTENT_IDS = [1, 2, 3, 4, 5, 6];
+// Known content IDs - Active decks only (excluding legacy decks 3, 4)
+const KNOWN_CONTENT_IDS = [1, 2, 5, 6];
 
 // Cache configuration
 const CACHE_KEY = 'tesserarx_deck_cache';
@@ -98,13 +98,31 @@ async function loadDeck(contract, contentId) {
 
         // Fetch manifest (with fallback to local metadata)
         let manifest;
+
+        // Map content IDs to local metadata files
+        const metadataMap = {
+            1: 'metadata/deck-1-manifest.json', // Waite-Smith Rider
+            2: 'metadata/deck-2-manifest.json', // Tarot de Marseille
+            5: 'metadata/deck-5-manifest.json', // Anecdotes Tarot
+            6: 'metadata/deck-6-manifest.json'  // Clown Town Tarot
+        };
+
         if (!version.manifestURI || version.manifestURI === '' || version.manifestURI === '0x') {
             // Fallback: load from local metadata folder
-            const fallbackURI = `metadata/deck-${contentId}-manifest.json`;
-            console.log(`No on-chain manifestURI for content ${contentId}, using fallback: ${fallbackURI}`);
-            manifest = await fetchManifest(fallbackURI);
+            const fallbackURI = metadataMap[contentId];
+            if (fallbackURI) {
+                console.log(`No on-chain manifestURI for content ${contentId}, using fallback: ${fallbackURI}`);
+                manifest = await fetchManifest(fallbackURI);
+            } else {
+                console.warn(`No fallback metadata for content ${contentId}`);
+            }
         } else {
             manifest = await fetchManifest(version.manifestURI);
+            // If IPFS/remote fetch fails, try fallback
+            if (!manifest && metadataMap[contentId]) {
+                console.log(`Remote manifest failed for ${contentId}, trying local fallback`);
+                manifest = await fetchManifest(metadataMap[contentId]);
+            }
         }
 
         // Parse combined data (V2.1 contract structure)

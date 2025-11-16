@@ -301,7 +301,7 @@
                 ? `<button onclick="openDeck(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Access Deck</span></button>`
                 : deck.free
                 ? `<button onclick="claim(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Claim Pass</span></button>`
-                : `<button onclick="openPurchaseModal(${deck.contentId}, '${deck.price} DEV')" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Purchase Pass</span></button>`;
+                : `<button onclick="showPurchaseModal(${deck.contentId})" class="btn text-text px-6 py-3.5 rounded-xl text-sm w-full"><span class="relative z-10">Purchase Pass</span></button>`;
 
             el.innerHTML = `
                 <div class="corner tl"></div>
