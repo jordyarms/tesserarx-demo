@@ -135,7 +135,8 @@
             "function balanceOf(address account, uint256 id) view returns (uint256)",
             "function uri(uint256 tokenId) view returns (string)",
             "function getContentInfo(uint256 contentId) view returns (tuple(string name, address creator, uint256 maxSupply, uint256 totalMinted, string payloadURI, string specificationURI, string manifestURI))",
-            "function mint(address to, uint256 id, uint256 amount) external",
+            "function getActiveVersion(uint256 contentId) view returns (tuple(string payloadURI, string specificationURI, string manifestURI, uint256 timestamp, string reason, address updatedBy))",
+            "function claim(uint256 contentId) external",
             "function contentCreators(uint256 contentId) view returns (address)"
         ];
 
@@ -357,30 +358,22 @@
 
         async function claim(id) {
             try {
-                const creator = await contract.contentCreators(id);
-                const isCreator = creator.toLowerCase() === userAddress.toLowerCase();
-
-                if (isCreator) {
-                    const tx = await contract.mint(userAddress, id, 1);
-                    alert('Minting pass...');
+                if (confirm('Claim this free deck pass?')) {
+                    const tx = await contract.claim(id);
+                    alert('Claiming pass...');
                     await tx.wait();
-                    alert('Pass minted.');
+                    alert('Pass claimed successfully!');
                     await loadLibrary();
-                } else {
-                    if (confirm('Request free pass?')) {
-                        try {
-                            const tx = await contract.mint(userAddress, id, 1);
-                            alert('Minting...');
-                            await tx.wait();
-                            alert('Claimed!');
-                            await loadLibrary();
-                        } catch (error) {
-                            alert('Note: Creator must mint passes.\n\nError: ' + error.message);
-                        }
-                    }
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Claim error:', error);
+                if (error.message.includes('Already claimed')) {
+                    alert('You have already claimed this deck.');
+                } else if (error.message.includes('Content is not free')) {
+                    alert('This deck is not free. Please use the purchase option.');
+                } else {
+                    alert('Claim failed: ' + error.message);
+                }
             }
         }
 
