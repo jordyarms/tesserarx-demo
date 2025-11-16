@@ -2,7 +2,7 @@
 
 **Reference implementation of consumer apps for the Tesserarx content pass protocol**
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://YOUR_VERCEL_URL.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://tesserarx-demo.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 ---
@@ -10,18 +10,20 @@
 ## What is This?
 
 This repository contains **reference consumer applications** demonstrating how to build apps that:
+
 - Browse blockchain-gated content (tarot decks)
 - Verify access via ERC-1155 passes
 - Decrypt and display TDP-1.0 packages
 - Manage user collections
 
-**Live Demo**: [https://YOUR_VERCEL_URL.vercel.app](https://YOUR_VERCEL_URL.vercel.app)
+**Live Demo**: [https://tesserarx-demo.vercel.app](https://tesserarx-demo.vercel.app)
 
 ---
 
 ## Features
 
 ### Deck Library ([deck-library.html](./public/deck-library.html))
+
 - 🌟 Browse 6 deployed tarot decks
 - 📖 View public metadata
 - 🎁 Claim free passes
@@ -29,6 +31,7 @@ This repository contains **reference consumer applications** demonstrating how t
 - 🔗 Connect wallet (MetaMask)
 
 ### Tarot Reader ([reader.html](./public/reader.html))
+
 - 🔮 Full TDP-1.0 package reader
 - 🎴 Display all 78 cards
 - ✅ Verify on-chain access
@@ -36,6 +39,7 @@ This repository contains **reference consumer applications** demonstrating how t
 - 🎲 Interactive card browsing
 
 ### Vault ([vault.html](./public/vault.html))
+
 - 🗂️ View owned passes
 - 📊 Collection management
 - 🔑 Access purchased content
@@ -66,13 +70,13 @@ Create `.env.local` (or update `public/config.js`):
 ```javascript
 // Contract Configuration
 const CONFIG = {
-  CONTRACT_ADDRESS: '0xBFF26E227Cb5fb0Feb0D18250C0a655A6066C865',
-  NETWORK_RPC: 'https://rpc.api.moonbase.moonbeam.network',
+  CONTRACT_ADDRESS: "0xBFF26E227Cb5fb0Feb0D18250C0a655A6066C865",
+  NETWORK_RPC: "https://rpc.api.moonbase.moonbeam.network",
   CHAIN_ID: 1287,
-  NETWORK_NAME: 'Moonbase Alpha',
+  NETWORK_NAME: "Moonbase Alpha",
 
   // Content Repository (optional)
-  TDP_CONTENT_BASE_URL: 'https://tdp-standard.github.io/content/',
+  TDP_CONTENT_BASE_URL: "https://tdp-standard.github.io/content/",
 };
 ```
 
@@ -85,6 +89,7 @@ const CONFIG = {
 **URL**: `/deck-library.html`
 
 **Features**:
+
 - Browse all deployed decks
 - View metadata (artist, tradition, card count)
 - Check pricing and availability
@@ -92,26 +97,28 @@ const CONFIG = {
 - Purchase paid decks
 
 **Tech Stack**:
+
 - ethers.js for blockchain interaction
 - Web3Modal for wallet connection
 - Vanilla JavaScript + CSS
 
 **Code Highlights**:
+
 ```javascript
 // Claim free deck
 async function claimDeck(contentId) {
   const tx = await contract.claim(contentId);
   await tx.wait();
-  alert('Deck claimed successfully!');
+  alert("Deck claimed successfully!");
 }
 
 // Purchase deck
 async function purchaseDeck(contentId, price) {
   const tx = await contract.purchase(contentId, ethers.ZeroAddress, {
-    value: price
+    value: price,
   });
   await tx.wait();
-  alert('Deck purchased!');
+  alert("Deck purchased!");
 }
 ```
 
@@ -122,6 +129,7 @@ async function purchaseDeck(contentId, price) {
 **URL**: `/reader.html`
 
 **Features**:
+
 - Load TDP-1.0 packages
 - Verify access passes
 - Decrypt content client-side
@@ -129,18 +137,20 @@ async function purchaseDeck(contentId, price) {
 - Browse by suit/arcana
 
 **Tech Stack**:
+
 - JSZip for package extraction
 - Web Crypto API for AES-256-GCM decryption
 - Dynamic image loading
 
 **Code Highlights**:
+
 ```javascript
 // Load encrypted deck
 async function loadDeck(contentId) {
   // 1. Verify access
   const balance = await contract.balanceOf(userAddress, contentId);
   if (balance === 0n) {
-    throw new Error('No access pass');
+    throw new Error("No access pass");
   }
 
   // 2. Fetch content metadata
@@ -155,14 +165,12 @@ async function loadDeck(contentId) {
 
   // 4. Extract ZIP
   const zip = await JSZip.loadAsync(decrypted);
-  const manifest = JSON.parse(
-    await zip.file('manifest.json').async('string')
-  );
+  const manifest = JSON.parse(await zip.file("manifest.json").async("string"));
 
   // 5. Load images
   const images = {};
   for (const file of manifest.files.image_list) {
-    images[file.filename] = await zip.file(file.path).async('base64');
+    images[file.filename] = await zip.file(file.path).async("base64");
   }
 
   return { manifest, images };
@@ -176,12 +184,14 @@ async function loadDeck(contentId) {
 **URL**: `/vault.html`
 
 **Features**:
+
 - View all owned passes
 - See deck thumbnails
 - Access purchased content
 - Track total spending
 
 **Tech Stack**:
+
 - ERC-1155 balanceOf queries
 - IPFS metadata fetching
 - LocalStorage for caching
@@ -205,12 +215,13 @@ Decrypt (client-side) → Extract TDP → Display Cards
 ### Key Components
 
 #### Wallet Integration
+
 ```javascript
 // Web3Modal for wallet connection
 const web3Modal = new Web3Modal({
   network: "moonbase-alpha",
   cacheProvider: true,
-  providerOptions: {}
+  providerOptions: {},
 });
 
 const provider = await web3Modal.connect();
@@ -218,22 +229,20 @@ const signer = await new ethers.BrowserProvider(provider).getSigner();
 ```
 
 #### Contract Interaction
+
 ```javascript
 // Connect to ContentPassFactoryV2
-const contract = new ethers.Contract(
-  CONTRACT_ADDRESS,
-  ABI,
-  signer
-);
+const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
 // Check ownership
 const balance = await contract.balanceOf(userAddress, contentId);
 ```
 
 #### IPFS Resolution
+
 ```javascript
 function resolveIPFS(uri) {
-  if (uri.startsWith('ipfs://')) {
+  if (uri.startsWith("ipfs://")) {
     return `https://ipfs.io/ipfs/${uri.slice(7)}`;
   }
   return uri;
@@ -241,6 +250,7 @@ function resolveIPFS(uri) {
 ```
 
 #### Decryption
+
 ```javascript
 async function decryptAES256GCM(encryptedData, keyHex) {
   const data = new Uint8Array(encryptedData);
@@ -249,15 +259,15 @@ async function decryptAES256GCM(encryptedData, keyHex) {
   const ciphertext = data.slice(28);
 
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     hexToBytes(keyHex),
-    { name: 'AES-GCM' },
+    { name: "AES-GCM" },
     false,
-    ['decrypt']
+    ["decrypt"]
   );
 
   const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv, tagLength: 128 },
+    { name: "AES-GCM", iv, tagLength: 128 },
     key,
     new Uint8Array([...ciphertext, ...authTag])
   );
@@ -272,14 +282,14 @@ async function decryptAES256GCM(encryptedData, keyHex) {
 
 This demo includes 6 tarot decks:
 
-| Content ID | Deck | Price | Supply |
-|------------|------|-------|--------|
-| 1 | Waite-Smith Rider (1909) | Free | Unlimited |
-| 2 | Tarot de Marseille (1760) | Free | Unlimited |
-| 3 | Anecdotes Tarot (Legacy) | 0.01 DEV | 100 |
-| 4 | Clown Town Tarot (Legacy) | 0.02 DEV | 50 |
-| 5 | Anecdotes Tarot | Free | Unlimited |
-| 6 | Clown Town Tarot | Free | Unlimited |
+| Content ID | Deck                      | Price    | Supply    |
+| ---------- | ------------------------- | -------- | --------- |
+| 1          | Waite-Smith Rider (1909)  | Free     | Unlimited |
+| 2          | Tarot de Marseille (1760) | Free     | Unlimited |
+| 3          | Anecdotes Tarot (Legacy)  | 0.01 DEV | 100       |
+| 4          | Clown Town Tarot (Legacy) | 0.02 DEV | 50        |
+| 5          | Anecdotes Tarot           | Free     | Unlimited |
+| 6          | Clown Town Tarot          | Free     | Unlimited |
 
 All decks conform to [TDP-1.0 standard](https://github.com/jordyarms/tdp-standard).
 
@@ -292,6 +302,7 @@ All decks conform to [TDP-1.0 standard](https://github.com/jordyarms/tdp-standar
 This repo serves as a reference for building your own consumer apps.
 
 **Key Learnings**:
+
 1. **Wallet Connection** - How to integrate MetaMask/Web3
 2. **Contract Interaction** - Reading content, claiming/purchasing passes
 3. **Content Decryption** - Client-side AES-256-GCM implementation
@@ -301,10 +312,12 @@ This repo serves as a reference for building your own consumer apps.
 ### Customization
 
 **Change Styling**:
+
 - Edit CSS in each HTML file
 - Current theme: "CyberMystic" glass-morphism
 
 **Add Features**:
+
 - Tarot spreads (3-card, Celtic Cross)
 - Reading journal
 - Card meanings database
@@ -312,11 +325,12 @@ This repo serves as a reference for building your own consumer apps.
 - Multiple deck support
 
 **Integrate Your Content**:
+
 ```javascript
 // Update contract address and network
 const CONFIG = {
-  CONTRACT_ADDRESS: 'YOUR_CONTRACT_ADDRESS',
-  CHAIN_ID: 1284,  // Moonbeam mainnet
+  CONTRACT_ADDRESS: "YOUR_CONTRACT_ADDRESS",
+  CHAIN_ID: 1284, // Moonbeam mainnet
   // ...
 };
 ```
@@ -330,6 +344,7 @@ const CONFIG = {
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jordyarms/tesserarx-demo)
 
 **Steps**:
+
 1. Connect GitHub repo to Vercel
 2. Configure environment variables (if needed)
 3. Deploy
@@ -382,14 +397,15 @@ const CONFIG = {
 
 ## Browser Compatibility
 
-| Browser | Support | Notes |
-|---------|---------|-------|
-| Chrome/Edge | ✅ Full | Recommended |
-| Firefox | ✅ Full | - |
-| Safari | ⚠️ Partial | MetaMask via extension |
-| Mobile | ⚠️ Limited | Use MetaMask mobile browser |
+| Browser     | Support    | Notes                       |
+| ----------- | ---------- | --------------------------- |
+| Chrome/Edge | ✅ Full    | Recommended                 |
+| Firefox     | ✅ Full    | -                           |
+| Safari      | ⚠️ Partial | MetaMask via extension      |
+| Mobile      | ⚠️ Limited | Use MetaMask mobile browser |
 
 **Requirements**:
+
 - Modern browser with Web Crypto API
 - Wallet extension (MetaMask, etc.)
 
@@ -404,6 +420,7 @@ const CONFIG = {
 - No server-side key storage
 
 **Implications**:
+
 - Content is protected by access passes, not key secrecy
 - Users can share decrypted content manually (like any digital file)
 - Blockchain provides access control, not DRM enforcement
@@ -423,24 +440,27 @@ const CONFIG = {
 ### "Wrong Network" Error
 
 **Solution**: Switch MetaMask to Moonbase Alpha
+
 ```javascript
 await window.ethereum.request({
-  method: 'wallet_switchEthereumChain',
-  params: [{ chainId: '0x507' }], // 1287
+  method: "wallet_switchEthereumChain",
+  params: [{ chainId: "0x507" }], // 1287
 });
 ```
 
 ### "No Access" Error
 
 **Solution**: Verify you own a pass
+
 ```javascript
 const balance = await contract.balanceOf(userAddress, contentId);
-console.log('Pass balance:', balance.toString());
+console.log("Pass balance:", balance.toString());
 ```
 
 ### IPFS Loading Issues
 
 **Solutions**:
+
 - Use public gateways: `ipfs.io`, `dweb.link`
 - Pin content on Pinata or NFT.Storage
 - Enable IPFS companion browser extension
@@ -448,15 +468,17 @@ console.log('Pass balance:', balance.toString());
 ### Decryption Failed
 
 **Causes**:
+
 - Incorrect encryption key
 - Corrupted package
 - Wrong file format
 
 **Debug**:
+
 ```javascript
-console.log('Key:', content.encryptionKey);
-console.log('Payload URI:', content.payloadURI);
-console.log('Package size:', encryptedData.byteLength);
+console.log("Key:", content.encryptionKey);
+console.log("Payload URI:", content.payloadURI);
+console.log("Package size:", encryptedData.byteLength);
 ```
 
 ---
@@ -494,6 +516,7 @@ Want to improve the demo or add features?
 5. Submit a pull request
 
 **Ideas for contributions**:
+
 - Additional tarot spreads
 - Reading history/journal
 - Card meanings database
