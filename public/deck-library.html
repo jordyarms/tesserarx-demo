@@ -241,20 +241,26 @@
             }
         }
 
-        async function loadLibrary() {
+        async function loadLibrary(forceRefresh = false) {
             const grid = document.getElementById('deckGrid');
             grid.innerHTML = '<div class="col-span-full text-center py-20"><div class="status mx-auto mb-4"></div><div class="mono text-caption text-muted">Loading decks from blockchain...</div></div>';
 
             try {
+                // If force refresh (after purchase), get a fresh contract instance
+                let contractToUse = contract;
+                if (forceRefresh) {
+                    contractToUse = await walletManager.getContract(CONTRACT_ABI);
+                }
+
                 // Load all decks dynamically from contract + manifests
-                const decks = await ContentLoader.loadAllDecks(contract);
+                const decks = await ContentLoader.loadAllDecks(contractToUse);
 
                 grid.innerHTML = '';
                 let owned = 0, free = 0;
 
                 for (const [index, deck] of decks.entries()) {
                     // Check ownership
-                    const balance = await contract.balanceOf(userAddress, deck.contentId);
+                    const balance = await contractToUse.balanceOf(userAddress, deck.contentId);
                     const hasPass = balance.toNumber() > 0;
                     if (hasPass) owned++;
                     if (deck.free) free++;
@@ -269,6 +275,11 @@
                 document.getElementById('totalDecks').textContent = decks.length;
                 document.getElementById('ownedDecks').textContent = owned;
                 document.getElementById('freeDecks').textContent = free;
+
+                // Update global contract if we got a fresh one
+                if (forceRefresh) {
+                    contract = contractToUse;
+                }
 
             } catch (error) {
                 console.error('Failed to load library:', error);
@@ -354,7 +365,7 @@
                     alert('Claiming pass...');
                     await tx.wait();
                     alert('Pass claimed successfully!');
-                    await loadLibrary();
+                    await loadLibrary(true); // Force refresh after claim
                 }
             } catch (error) {
                 console.error('Claim error:', error);
@@ -471,9 +482,13 @@
                 await tx.wait();
 
                 // Success
-                closePurchaseModal();
                 alert('✅ Pass purchased successfully!');
-                location.reload();
+                await loadLibrary(true); // Force refresh after purchase
+
+                // Reset and close modal
+                btn.disabled = false;
+                btn.textContent = 'Purchase';
+                closePurchaseModal();
 
             } catch (error) {
                 console.error('Purchase failed:', error);
@@ -496,7 +511,7 @@
                 alert('⏳ Claiming free pass...');
                 await tx.wait();
                 alert('✅ Free pass claimed!');
-                location.reload();
+                await loadLibrary(true); // Force refresh after claim
             } catch (error) {
                 console.error('Claim failed:', error);
                 alert(`❌ Claim failed: ${error.message}`);
