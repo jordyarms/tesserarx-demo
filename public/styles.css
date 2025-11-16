@@ -1,0 +1,378 @@
+/* Tesserarx Demo - Shared Styles */
+/* CyberMystic Glass-morphism Theme */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* === Base Styles === */
+
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #08090e;
+    position: relative;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ultra-subtle static grid background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        repeating-linear-gradient(0deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px),
+        repeating-linear-gradient(90deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* === Glass Morphism Components === */
+
+.glass-card {
+    background: linear-gradient(135deg, rgba(15, 17, 23, 0.4) 0%, rgba(15, 17, 23, 0.6) 100%);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(24, 27, 36, 0.8);
+    border-radius: 16px;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0, 201, 255, 0.15);
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(0, 201, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glass-nav {
+    background: linear-gradient(135deg, rgba(15, 17, 23, 0.7) 0%, rgba(15, 17, 23, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(150%);
+    border-bottom: 1px solid rgba(24, 27, 36, 0.5);
+}
+
+/* === Typography === */
+
+.heading {
+    font-weight: 200;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: rgba(248, 249, 250, 0.95);
+}
+
+.subheading {
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    color: rgba(156, 163, 175, 0.9);
+}
+
+.mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* === Buttons === */
+
+.btn {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(0, 201, 255, 0.15) 0%, rgba(139, 122, 255, 0.15) 100%);
+    border: 1px solid rgba(0, 201, 255, 0.3);
+    border-radius: 8px;
+    color: rgba(248, 249, 250, 0.95);
+    font-weight: 300;
+    font-size: 0.8125rem;
+    letter-spacing: 0.03em;
+    padding: 0.65rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-block;
+    text-decoration: none;
+}
+
+.btn:hover {
+    background: linear-gradient(135deg, rgba(0, 201, 255, 0.25) 0%, rgba(139, 122, 255, 0.25) 100%);
+    border-color: rgba(0, 201, 255, 0.5);
+    box-shadow: 0 0 20px rgba(0, 201, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, rgba(0, 201, 255, 0.2) 0%, rgba(139, 122, 255, 0.2) 100%);
+    border-color: rgba(0, 201, 255, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, rgba(15, 17, 23, 0.4) 0%, rgba(15, 17, 23, 0.6) 100%);
+    border-color: rgba(24, 27, 36, 0.8);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* === Badges === */
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+.badge-free {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: rgba(167, 243, 208, 0.95);
+}
+
+.badge-paid {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: rgba(253, 230, 138, 0.95);
+}
+
+.badge-limited {
+    background: linear-gradient(135deg, rgba(139, 122, 255, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+    border: 1px solid rgba(139, 122, 255, 0.3);
+    color: rgba(196, 181, 253, 0.95);
+}
+
+/* === Loading Spinner === */
+
+.spinner {
+    border: 3px solid rgba(0, 201, 255, 0.1);
+    border-top: 3px solid rgba(0, 201, 255, 0.8);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 2rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* === Status Messages === */
+
+.status-message {
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+}
+
+.status-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: rgba(167, 243, 208, 0.95);
+}
+
+.status-error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: rgba(252, 165, 165, 0.95);
+}
+
+.status-warning {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: rgba(253, 230, 138, 0.95);
+}
+
+.status-info {
+    background: linear-gradient(135deg, rgba(0, 201, 255, 0.1) 0%, rgba(139, 122, 255, 0.1) 100%);
+    border: 1px solid rgba(0, 201, 255, 0.3);
+    color: rgba(191, 219, 254, 0.95);
+}
+
+/* === Cards === */
+
+.card {
+    background: linear-gradient(135deg, rgba(15, 17, 23, 0.4) 0%, rgba(15, 17, 23, 0.6) 100%);
+    border: 1px solid rgba(24, 27, 36, 0.8);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    border-color: rgba(0, 201, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* === Grid Layouts === */
+
+.grid-decks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+/* === Tarot Card Specific === */
+
+.tarot-card {
+    aspect-ratio: 2/3;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid rgba(24, 27, 36, 0.8);
+}
+
+.tarot-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(0, 201, 255, 0.2);
+    border-color: rgba(0, 201, 255, 0.4);
+}
+
+.tarot-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tarot-card-reversed {
+    transform: rotate(180deg);
+}
+
+.tarot-card-reversed:hover {
+    transform: rotate(180deg) scale(1.05);
+}
+
+/* === Modal === */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(8, 9, 14, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, rgba(15, 17, 23, 0.95) 0%, rgba(15, 17, 23, 0.98) 100%);
+    border: 1px solid rgba(24, 27, 36, 0.8);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* === Utilities === */
+
+.text-muted {
+    color: rgba(156, 163, 175, 0.7);
+}
+
+.text-accent {
+    color: rgba(0, 201, 255, 0.95);
+}
+
+.text-accent2 {
+    color: rgba(139, 122, 255, 0.95);
+}
+
+.border-accent {
+    border-color: rgba(0, 201, 255, 0.3);
+}
+
+.bg-surface {
+    background-color: rgba(15, 17, 23, 0.6);
+}
+
+.bg-void {
+    background-color: #08090e;
+}
+
+/* === Responsive === */
+
+@media (max-width: 768px) {
+    .grid-decks {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-cards {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+    }
+
+    body {
+        font-size: 14px;
+    }
+}
+
+/* === Animations === */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.shimmer {
+    background: linear-gradient(90deg, transparent, rgba(0, 201, 255, 0.1), transparent);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}

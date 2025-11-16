@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContentPassFactory — Decentralized Content Distribution</title>
+    <title>Tesserarx — Blockchain-Native Content Passes</title>
+    <meta name="description" content="NFT-gated digital content distribution on Polkadot. Browse tarot decks, claim passes, and experience blockchain-native DRM.">
+
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,124 +22,14 @@
                         accent: '#00c9ff',
                         accent2: '#8b7aff',
                         muted: '#9ca3af'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
                     }
                 }
             }
         }
     </script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
-        * {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: #08090e;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Ultra-subtle static grid */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                repeating-linear-gradient(0deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px),
-                repeating-linear-gradient(90deg, rgba(0, 201, 255, 0.015) 0px, transparent 1px, transparent 2px, rgba(0, 201, 255, 0.015) 3px);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .glass-card {
-            background: linear-gradient(135deg, rgba(15, 17, 23, 0.4) 0%, rgba(15, 17, 23, 0.6) 100%);
-            backdrop-filter: blur(40px) saturate(180%);
-            border: 1px solid rgba(24, 27, 36, 0.8);
-            border-radius: 16px;
-            box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.03);
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .glass-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(0, 201, 255, 0.15);
-            box-shadow:
-                0 20px 40px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(0, 201, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-
-        .heading {
-            font-weight: 200;
-            letter-spacing: -0.03em;
-            line-height: 1.1;
-            color: rgba(248, 249, 250, 0.95);
-        }
-
-        .subheading {
-            font-weight: 300;
-            letter-spacing: 0.02em;
-            color: rgba(156, 163, 175, 0.9);
-        }
-
-        .btn {
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(135deg, rgba(0, 201, 255, 0.15) 0%, rgba(139, 122, 255, 0.15) 100%);
-            border: 1px solid rgba(0, 201, 255, 0.3);
-            border-radius: 8px;
-            color: rgba(248, 249, 250, 0.95);
-            font-weight: 300;
-            font-size: 0.8125rem;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            padding: 0.875rem 2rem;
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow:
-                0 2px 8px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(255, 255, 255, 0.1),
-                transparent);
-            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .btn:hover {
-            transform: translateY(-4px);
-            border-color: rgba(0, 201, 255, 0.5);
-            background: linear-gradient(135deg, rgba(0, 201, 255, 0.2) 0%, rgba(139, 122, 255, 0.2) 100%);
-            box-shadow:
-                0 20px 40px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(0, 201, 255, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
+        /* Page-specific animations */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -154,11 +50,38 @@
         .delay-3 { animation-delay: 0.3s; opacity: 0; }
         .delay-4 { animation-delay: 0.4s; opacity: 0; }
 
-        /* Navigation */
-        nav {
-            background: rgba(15, 17, 23, 0.8);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-bottom: 1px solid rgba(24, 27, 36, 0.8);
+        /* Enhanced button for hero */
+        .btn-hero {
+            text-transform: uppercase;
+            padding: 0.875rem 2rem;
+            font-size: 0.8125rem;
+        }
+
+        .btn-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-hero:hover::before {
+            left: 100%;
+        }
+
+        /* Navigation styles */
+        .glass-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
         }
 
         nav a {
@@ -173,16 +96,17 @@
 </head>
 <body class="min-h-screen text-gray-200">
     <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50">
+    <nav class="glass-nav">
         <div class="max-w-7xl mx-auto px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-8">
-                    <a href="index.html" class="heading text-xl">ContentPassFactory</a>
+                    <a href="index.html" class="heading text-xl">Tesserarx</a>
                     <div class="hidden md:flex gap-6 text-sm">
                         <a href="index.html" class="active">Home</a>
-                        <a href="vault.html">Vault</a>
+                        <a href="deck-library.html">Library</a>
                         <a href="reader.html">Reader</a>
-                        <a href="https://github.com/anthropics/tarotnew" target="_blank">Docs</a>
+                        <a href="vault.html">Vault</a>
+                        <a href="https://github.com/jordyarms/tdp-standard" target="_blank">Docs</a>
                     </div>
                 </div>
                 <div id="walletStatus"></div>
@@ -195,14 +119,14 @@
         <section class="max-w-7xl mx-auto px-6 py-24 text-center">
             <div class="animate-fade-in-up">
                 <h1 class="heading text-6xl md:text-7xl mb-6">
-                    Decentralized Content<br>Distribution
+                    Blockchain-Native<br>Content Passes
                 </h1>
                 <p class="subheading text-xl md:text-2xl mb-12 max-w-3xl mx-auto">
-                    NFT-gated access to digital content on Polkadot. Own your passes, control your library.
+                    Fair compensation for creators • No platform lock-in • Sustainable model for artists & developers
                 </p>
                 <div class="flex gap-4 justify-center flex-wrap">
-                    <a href="vault.html" class="btn inline-block">Explore Vault</a>
-                    <a href="reader.html" class="btn inline-block">Start Reading</a>
+                    <a href="deck-library.html" class="btn btn-hero inline-block">Browse Decks →</a>
+                    <a href="reader.html" class="btn btn-hero btn-secondary inline-block">Try Reader</a>
                 </div>
             </div>
         </section>
@@ -213,9 +137,9 @@
                 <!-- Feature 1 -->
                 <div class="glass-card p-8 animate-fade-in-up delay-1">
                     <div class="text-4xl mb-4">🔐</div>
-                    <h3 class="heading text-2xl mb-3">NFT Access Control</h3>
+                    <h3 class="heading text-2xl mb-3">ERC-1155 Passes</h3>
                     <p class="subheading text-sm">
-                        ERC-1155 passes grant verifiable on-chain access to premium content.
+                        Verifiable on-chain access control. Own your content passes like any NFT.
                     </p>
                 </div>
 
@@ -224,16 +148,16 @@
                     <div class="text-4xl mb-4">📦</div>
                     <h3 class="heading text-2xl mb-3">TDP-1.0 Standard</h3>
                     <p class="subheading text-sm">
-                        Tarot Deck Package format ensures cross-platform compatibility.
+                        Interoperable content packages. Create once, work everywhere.
                     </p>
                 </div>
 
                 <!-- Feature 3 -->
                 <div class="glass-card p-8 animate-fade-in-up delay-3">
                     <div class="text-4xl mb-4">⛓️</div>
-                    <h3 class="heading text-2xl mb-3">Moonbase Alpha</h3>
+                    <h3 class="heading text-2xl mb-3">Built on Moonbeam</h3>
                     <p class="subheading text-sm">
-                        Built on Polkadot's EVM-compatible testnet with DEV tokens.
+                        Polkadot's EVM-compatible parachain. Low fees, fast finality.
                     </p>
                 </div>
             </div>
@@ -242,22 +166,56 @@
         <!-- Demo Section -->
         <section class="max-w-7xl mx-auto px-6 py-24">
             <div class="glass-card p-12 text-center animate-fade-in-up delay-4">
-                <h2 class="heading text-4xl mb-6">Live Demo</h2>
+                <h2 class="heading text-4xl mb-6">Try the Demo</h2>
                 <p class="subheading text-lg mb-8 max-w-2xl mx-auto">
-                    Experience decentralized content distribution with our tarot deck library. Browse 4 unique decks, mint free passes, and explore the TDP-1.0 protocol.
+                    Experience blockchain-native content distribution with 6 tarot decks. Claim free passes, explore encrypted TDP-1.0 packages, and test the full workflow.
                 </p>
                 <div class="flex gap-4 justify-center flex-wrap">
-                    <a href="vault.html" class="btn">Browse Decks →</a>
+                    <a href="deck-library.html" class="btn btn-primary">Explore Library →</a>
+                    <a href="https://github.com/jordyarms/tdp-standard" target="_blank" class="btn btn-secondary">View Specification</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="max-w-7xl mx-auto px-6 py-24">
+            <h2 class="heading text-4xl text-center mb-12">Use Cases</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="heading text-xl mb-3">🃏 Current: Tarot Decks</h3>
+                    <p class="text-muted text-sm mb-4">
+                        6 deployed decks demonstrating the full protocol. Free and paid content, limited editions, and referral systems.
+                    </p>
+                    <a href="deck-library.html" class="text-accent text-sm">Browse decks →</a>
+                </div>
+
+                <div class="card">
+                    <h3 class="heading text-xl mb-3">📚 Future: Ebooks & More</h3>
+                    <p class="text-muted text-sm mb-4">
+                        The protocol is content-agnostic. Audiobooks, music samples, comic books, and any digital goods can use standardized content passes.
+                    </p>
+                    <a href="https://github.com/jordyarms/tesserarx-contracts" target="_blank" class="text-accent text-sm">View contracts →</a>
                 </div>
             </div>
         </section>
 
         <!-- Footer -->
         <footer class="max-w-7xl mx-auto px-6 py-12 text-center border-t border-white/5 mt-24">
-            <p class="subheading text-sm">
-                Built with Solidity, Hardhat, and ethers.js<br>
-                Deployed to Moonbase Alpha at <span class="font-mono text-xs text-accent">0x76d3...2ADd</span>
+            <p class="subheading text-sm mb-4">
+                <strong class="text-accent">Tesserarx</strong> — Blockchain-Native Content Passes
             </p>
+            <p class="text-muted text-xs mb-2">
+                Built with Solidity • Hardhat • ethers.js
+            </p>
+            <p class="mono text-xs text-muted">
+                Contract: <span class="text-accent">0xBFF26E227Cb5fb0Feb0D18250C0a655A6066C865</span><br>
+                Network: Moonbase Alpha (Polkadot Testnet)
+            </p>
+            <div class="flex gap-4 justify-center mt-6">
+                <a href="https://github.com/jordyarms/tdp-standard" target="_blank" class="text-muted hover:text-accent text-sm">TDP-1.0 Spec</a>
+                <a href="https://github.com/jordyarms/tesserarx-contracts" target="_blank" class="text-muted hover:text-accent text-sm">Contracts</a>
+                <a href="https://github.com/jordyarms/tesserarx-demo" target="_blank" class="text-muted hover:text-accent text-sm">Demo Source</a>
+            </div>
         </footer>
     </div>
 
