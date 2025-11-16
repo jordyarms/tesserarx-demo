@@ -12,13 +12,13 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/main.js'),
       name: 'TesserarxPolkadot',
       fileName: 'tesserarx-polkadot',
-      formats: ['umd']
+      formats: ['iife']
     },
     outDir: 'public/dist',
     emptyOutDir: false,
     rollupOptions: {
-      external: [],
       output: {
+        extend: true,
         globals: {}
       }
     }
