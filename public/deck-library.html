@@ -471,9 +471,13 @@
                 await tx.wait();
 
                 // Success
-                closePurchaseModal();
                 alert('✅ Pass purchased successfully!');
-                location.reload();
+                await loadLibrary();
+
+                // Reset and close modal
+                btn.disabled = false;
+                btn.textContent = 'Purchase';
+                closePurchaseModal();
 
             } catch (error) {
                 console.error('Purchase failed:', error);
