@@ -134,7 +134,7 @@
         const CONTRACT_ABI = [
             "function balanceOf(address account, uint256 id) view returns (uint256)",
             "function uri(uint256 tokenId) view returns (string)",
-            "function getContentInfo(uint256 contentId) view returns (tuple(string name, address creator, uint256 maxSupply, uint256 totalMinted, string payloadURI, string specificationURI, string manifestURI))",
+            "function getContentInfo(uint256 contentId) view returns (address creator, string name, uint256 maxSupply, uint256 totalMinted, uint256 activeVersionIndex, uint256 price)",
             "function getActiveVersion(uint256 contentId) view returns (tuple(string payloadURI, string specificationURI, string manifestURI, uint256 timestamp, string reason, address updatedBy))",
             "function claim(uint256 contentId) external",
             "function contentCreators(uint256 contentId) view returns (address)"
