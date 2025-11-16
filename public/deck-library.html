@@ -41,30 +41,10 @@
             <!-- Header -->
             <header class="mb-24 fade-in" style="animation-delay: 0s">
                 <div class="text-center">
-
-                    <!-- Status -->
-                    <div class="flex items-center justify-center gap-2 mb-8">
-                        <div class="status"></div>
-                        <span class="mono text-micro text-muted uppercase">System Active</span>
-                    </div>
-
                     <!-- Logo -->
-                    <h1 class="heading text-6xl md:text-8xl mb-6">
-                        <span class="text-accent" style="font-weight: 300">Cyber</span><span class="text-text" style="font-weight: 200">Mystic</span>
+                    <h1 class="heading text-5xl mb-4">
+                       Marketplace
                     </h1>
-
-                    <!-- Subtitle -->
-                    <p class="text-muted text-sm md:text-base mb-8" style="letter-spacing: 0.08em">
-                        Content Access Protocol <span class="text-muted/50 mx-2">/</span> Deck Library
-                    </p>
-
-                    <!-- TDP Badge -->
-                    <div class="inline-block">
-                        <div class="badge border-accent/20 bg-accent/5 text-accent/80">
-                            TDP-1.0 Compliant
-                        </div>
-                    </div>
-
                     <!-- Decorative line -->
                     <div class="divider mt-12"></div>
                 </div>
@@ -187,26 +167,15 @@
     </div>
 
     <script>
-
-        // Contract interaction - V2.1
-        const CONTRACT_ADDRESS = "0xBFF26E227Cb5fb0Feb0D18250C0a655A6066C865";
-        const MOONBASE_ALPHA = {
-            chainId: '0x507',
-            chainName: 'Moonbase Alpha',
-            nativeCurrency: { name: 'DEV', symbol: 'DEV', decimals: 18 },
-            rpcUrls: ['https://rpc.api.moonbase.moonbeam.network'],
-            blockExplorerUrls: ['https://moonbase.moonscan.io/']
-        };
-
+        // Contract ABI - V2.1 (CONTRACT_ADDRESS and MOONBASE_ALPHA come from wallet-persistence.js)
         const CONTRACT_ABI = [
             // ERC-1155 Standard
             "function balanceOf(address account, uint256 id) view returns (uint256)",
             "function uri(uint256 tokenId) view returns (string)",
 
-            // V1 Functions
-            "function content(uint256 contentId) view returns (tuple(address creator, string name, uint256 maxSupply, uint256 totalMinted, uint256 activeVersionIndex))",
-            "function getContentInfo(uint256 contentId) view returns (tuple(string name, address creator, uint256 maxSupply, uint256 totalMinted, string payloadURI, string specificationURI, string manifestURI))",
-            "function mint(address to, uint256 id, uint256 amount) external",
+            // V2.1 Content Info
+            "function getContentInfo(uint256 contentId) view returns (address creator, string name, bool isFree, uint256 price, uint256 referralBasisPoints, uint256 maxSupply, uint256 currentSupply)",
+            "function getActiveVersion(uint256 contentId) view returns (tuple(string payloadURI, string specificationURI, string manifestURI, uint256 timestamp, string reason, address updatedBy))",
             "function contentCreators(uint256 contentId) view returns (address)",
 
             // V2.1 Purchase Functions
@@ -553,5 +522,9 @@
             connectWallet();
         }
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="wallet-persistence.js"></script>
+    <script src="nav-component.js"></script>
 </body>
 </html>
