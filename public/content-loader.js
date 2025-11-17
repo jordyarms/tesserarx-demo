@@ -7,8 +7,20 @@
 const KNOWN_CONTENT_IDS = [1, 2, 5, 6];
 
 // Cache configuration
-const CACHE_KEY = 'tesserarx_deck_cache';
+const CACHE_KEY_PREFIX = 'tesserarx_deck_cache';
 const CACHE_TTL = 3600000; // 1 hour
+
+/**
+ * Get cache key for a specific wallet address
+ * Returns a wallet-specific cache key or global key if no address provided
+ */
+function getCacheKey(walletAddress = null) {
+    if (walletAddress) {
+        // Normalize address to lowercase for consistency
+        return `${CACHE_KEY_PREFIX}_${walletAddress.toLowerCase()}`;
+    }
+    return CACHE_KEY_PREFIX;
+}
 
 /**
  * Resolve URI (IPFS or HTTP)
@@ -142,16 +154,21 @@ async function loadDeck(contract, contentId) {
 
 /**
  * Load all known decks
+ * @param {object} contract - The contract instance
+ * @param {boolean} useCache - Whether to use cached data
+ * @param {string} walletAddress - Optional wallet address for cache scoping
  */
-async function loadAllDecks(contract, useCache = true) {
+async function loadAllDecks(contract, useCache = true, walletAddress = null) {
+    const cacheKey = getCacheKey(walletAddress);
+
     // Check cache
     if (useCache) {
-        const cached = localStorage.getItem(CACHE_KEY);
+        const cached = localStorage.getItem(cacheKey);
         if (cached) {
             try {
                 const data = JSON.parse(cached);
                 if (Date.now() - data.timestamp < CACHE_TTL) {
-                    console.log('Using cached deck data');
+                    console.log(`Using cached deck data${walletAddress ? ' for wallet ' + walletAddress.slice(0, 6) + '...' : ''}`);
                     return data.decks;
                 }
             } catch (error) {
@@ -174,9 +191,10 @@ async function loadAllDecks(contract, useCache = true) {
     // Update cache
     if (useCache) {
         try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
+            localStorage.setItem(cacheKey, JSON.stringify({
                 decks,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                walletAddress: walletAddress || 'global'
             }));
         } catch (error) {
             console.warn('Cache write error:', error);
@@ -188,16 +206,35 @@ async function loadAllDecks(contract, useCache = true) {
 
 /**
  * Clear deck cache
+ * @param {string} walletAddress - Optional wallet address to clear specific cache, or clears all if not provided
  */
-function clearDeckCache() {
-    localStorage.removeItem(CACHE_KEY);
+function clearDeckCache(walletAddress = null) {
+    if (walletAddress) {
+        // Clear cache for specific wallet
+        const cacheKey = getCacheKey(walletAddress);
+        localStorage.removeItem(cacheKey);
+    } else {
+        // Clear all deck caches (both global and wallet-specific)
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(CACHE_KEY_PREFIX)) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+    }
 }
 
 /**
  * Load owned decks for a user
+ * @param {object} contract - The contract instance
+ * @param {string} userAddress - The user's wallet address
+ * @param {boolean} useCache - Whether to use cached data
  */
 async function loadOwnedDecks(contract, userAddress, useCache = true) {
-    const allDecks = await loadAllDecks(contract, useCache);
+    // Use wallet-specific cache
+    const allDecks = await loadAllDecks(contract, useCache, userAddress);
     const owned = [];
 
     for (const deck of allDecks) {

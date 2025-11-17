@@ -113,12 +113,20 @@ class WalletManager {
         this.signer = null;
         this.userAddress = null;
         localStorage.removeItem(STORAGE_KEY);
+        // Clear deck cache to prevent crossover between wallets
+        if (window.ContentLoader) {
+            window.ContentLoader.clearDeckCache();
+        }
         this.renderWalletStatus();
     }
 
     handleAccountChange(newAddress) {
         this.userAddress = newAddress;
         this.renderWalletStatus();
+        // Clear deck cache before reloading to prevent crossover between wallets
+        if (window.ContentLoader) {
+            window.ContentLoader.clearDeckCache();
+        }
         // Reload page to refresh any account-specific data
         setTimeout(() => window.location.reload(), 500);
     }

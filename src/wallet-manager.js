@@ -161,6 +161,10 @@ class WalletManager {
         this.injector = null;
         this.evmAddress = null;
         localStorage.removeItem(STORAGE_KEY);
+        // Clear deck cache to prevent crossover between wallets
+        if (typeof window !== 'undefined' && window.ContentLoader) {
+            window.ContentLoader.clearDeckCache();
+        }
         this.renderWalletStatus();
     }
 
