@@ -407,16 +407,22 @@ function createPolkadotEVMSigner(walletManager, provider) {
             console.log('📝 Transaction params:', { to, value, gasLimit, data: data.slice(0, 20) + '...' });
 
             // Build ethereum.transact extrinsic for EVM transaction
+            // Moonbase Alpha now requires EIP-1559 format (not V2)
             const evmTx = api.tx.ethereum.transact({
-                V2: {
+                eip1559: {
+                    chainId: populatedTx.chainId,
+                    nonce: populatedTx.nonce,
+                    maxPriorityFeePerGas: populatedTx.maxPriorityFeePerGas.toHexString(),
+                    maxFeePerGas: populatedTx.maxFeePerGas.toHexString(),
                     gasLimit: gasLimit,
                     action: to ? { Call: to } : 'Create',
                     value: value,
                     input: data,
+                    accessList: []
                 }
             });
 
-            console.log('📝 Built Polkadot extrinsic, submitting...');
+            console.log('📝 Built EIP-1559 Polkadot extrinsic, submitting...');
 
             // Sign and send using Polkadot extension
             return new Promise((resolve, reject) => {
