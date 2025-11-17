@@ -481,9 +481,10 @@
                 // Wait for confirmation
                 await tx.wait();
 
-                // Success
+                // Success - clear cache to ensure fresh data everywhere
+                ContentLoader.clearDeckCache();
                 alert('✅ Pass purchased successfully!');
-              
+
                 await loadLibrary(true); // Force refresh after purchase
 
                 // Reset and close modal
@@ -511,6 +512,9 @@
                 const tx = await contract.claim(contentId);
                 alert('⏳ Claiming free pass...');
                 await tx.wait();
+
+                // Clear cache to ensure fresh data everywhere
+                ContentLoader.clearDeckCache();
                 alert('✅ Free pass claimed!');
                 await loadLibrary(true); // Force refresh after claim
             } catch (error) {
