@@ -326,9 +326,14 @@ function createPolkadotEVMSigner(walletManager, provider) {
             this._provider = provider;
         }
 
-    async getAddress() {
-        return this.walletManager.getEvmAddress();
-    }
+        // Ethers.js needs this getter to access the provider for read operations
+        get provider() {
+            return this._provider;
+        }
+
+        async getAddress() {
+            return this.walletManager.getEvmAddress();
+        }
 
     async signMessage(message) {
         // Sign message using Polkadot extension
