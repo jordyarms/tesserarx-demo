@@ -253,7 +253,8 @@
                 }
 
                 // Load all decks dynamically from contract + manifests
-                const decks = await ContentLoader.loadAllDecks(contractToUse);
+                // Pass userAddress for wallet-specific caching
+                const decks = await ContentLoader.loadAllDecks(contractToUse, true, userAddress);
 
                 grid.innerHTML = '';
                 let owned = 0, free = 0;
