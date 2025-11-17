@@ -237,17 +237,30 @@ class WalletManager {
 
         // Check if wallet injected an Ethereum provider (Talisman, SubWallet do this)
         if (window.ethereum) {
-            console.log('✓ window.ethereum detected, using Web3Provider');
+            console.log('✓ window.ethereum detected, attempting to use Web3Provider');
             const { ethers } = window;
-            const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-            console.log('✓ Web3Provider created, getting signer...');
-            const signer = await web3Provider.getSigner();
-            console.log('✓ Signer obtained from window.ethereum');
-            return signer;
+
+            try {
+                // First check if we can get accounts from the ethereum provider
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                console.log('📝 Accounts from window.ethereum:', accounts);
+
+                if (accounts && accounts.length > 0) {
+                    const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+                    console.log('✓ Web3Provider created, getting signer...');
+                    const signer = await web3Provider.getSigner(accounts[0]);
+                    console.log('✓ Signer obtained from window.ethereum for:', accounts[0]);
+                    return signer;
+                } else {
+                    console.log('⚠ No accounts available from window.ethereum, using custom signer');
+                }
+            } catch (error) {
+                console.warn('⚠ Failed to get signer from window.ethereum:', error.message);
+            }
         }
 
         // Fallback: use custom signer (limited functionality)
-        console.log('⚠ No window.ethereum, using custom PolkadotEVMSigner');
+        console.log('⚠ Using custom PolkadotEVMSigner');
         const provider = await this.getWeb3Provider();
         return createPolkadotEVMSigner(this, provider);
     }
@@ -268,11 +281,13 @@ class WalletManager {
         // Try to get a signer for write operations
         try {
             const signer = await this.getSigner();
+            console.log('✓ Contract created with signer (read/write)');
             return new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
         } catch (error) {
             // Fallback to provider for read-only
-            console.warn('Could not get signer, contract will be read-only');
+            console.warn('⚠ Could not get signer, contract will be read-only:', error.message);
             const provider = await this.getWeb3Provider();
+            console.log('✓ Contract created with provider (read-only)');
             return new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
         }
     }
