@@ -423,6 +423,9 @@ function createPolkadotEVMSigner(walletManager, provider) {
             });
 
             console.log('📝 Built EIP-1559 Polkadot extrinsic, submitting...');
+            console.log('📝 Substrate address for signing:', this.walletManager.getSubstrateAddress());
+            console.log('📝 Injector signer:', this.walletManager.injector.signer);
+            console.log('📝 Full account:', this.walletManager.getAccount());
 
             // Sign and send using Polkadot extension
             return new Promise((resolve, reject) => {
