@@ -1,28 +1,14 @@
-# Tesserarx Demo
+Unfortunately there has been a breaking change with the attempted integration of Subwallet support. 
 
-**Reference implementation of consumer apps for the Tesserarx content pass protocol**
+We will work to migrate this project off of the current solidity and moonbeam set up to correct for the breaking change.
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://tesserarx-demo.vercel.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Polkadot](https://img.shields.io/badge/Built%20on-Polkadot-E6007A)](https://polkadot.network/)
+At this time the core functionality of project is offline.
 
 ---
 
-## 🚀 Polkadot Integration
+# Tesserarx Demo
 
-This project now integrates the **Polkadot SDK** to provide native Polkadot ecosystem support:
-
-- **Wallet Support**: Connect with Polkadot.js, Talisman, SubWallet, and other Polkadot-native wallets
-- **@polkadot/extension-dapp**: Native extension integration for account management
-- **@polkadot/api**: Direct connection to Moonbase Alpha parachain via WebSocket
-- **EVM Compatibility**: Seamless interaction with EVM contracts through Moonbeam's unified accounts
-
-### Supported Wallets
-
-✅ **Polkadot.js Extension** - [Install](https://polkadot.js.org/extension/)
-✅ **Talisman** - [Install](https://talisman.xyz/)
-✅ **SubWallet** - [Install](https://subwallet.app/)
-✅ Any Polkadot-compatible wallet with EVM support
+**Reference implementation of consumer apps for the Tesserarx content pass protocol**
 
 ---
 
@@ -34,7 +20,6 @@ This repository contains **reference consumer applications** demonstrating how t
 - Verify access via ERC-1155 passes
 - Decrypt and display TDP-1.0 packages
 - Manage user collections
-- **NEW**: Connect via Polkadot wallet extensions
 
 **Live Demo**: [https://tesserarx-demo.vercel.app](https://tesserarx-demo.vercel.app)
 
