@@ -229,20 +229,40 @@ class WalletManager {
      * Checks for Ethereum provider injection from Polkadot wallets (Talisman, SubWallet)
      */
     async getSigner() {
+        console.log('🔄 getSigner called, isConnected:', this.isConnected());
+
         if (!this.isConnected()) {
             throw new Error('Wallet not connected');
         }
 
         // Check if wallet injected an Ethereum provider (Talisman, SubWallet do this)
         if (window.ethereum) {
+            console.log('✓ window.ethereum detected, attempting to use Web3Provider');
             const { ethers } = window;
-            const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-            return web3Provider.getSigner();
+
+            try {
+                // First check if we can get accounts from the ethereum provider
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                console.log('📝 Accounts from window.ethereum:', accounts);
+
+                if (accounts && accounts.length > 0) {
+                    const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+                    console.log('✓ Web3Provider created, getting signer...');
+                    const signer = await web3Provider.getSigner(accounts[0]);
+                    console.log('✓ Signer obtained from window.ethereum for:', accounts[0]);
+                    return signer;
+                } else {
+                    console.log('⚠ No accounts available from window.ethereum, using custom signer');
+                }
+            } catch (error) {
+                console.warn('⚠ Failed to get signer from window.ethereum:', error.message);
+            }
         }
 
         // Fallback: use custom signer (limited functionality)
+        console.log('⚠ Using custom PolkadotEVMSigner');
         const provider = await this.getWeb3Provider();
-        return new PolkadotEVMSigner(this, provider);
+        return createPolkadotEVMSigner(this, provider);
     }
 
     /**
@@ -261,11 +281,13 @@ class WalletManager {
         // Try to get a signer for write operations
         try {
             const signer = await this.getSigner();
+            console.log('✓ Contract created with signer (read/write)');
             return new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
         } catch (error) {
             // Fallback to provider for read-only
-            console.warn('Could not get signer, contract will be read-only');
+            console.warn('⚠ Could not get signer, contract will be read-only:', error.message);
             const provider = await this.getWeb3Provider();
+            console.log('✓ Contract created with provider (read-only)');
             return new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
         }
     }
@@ -289,17 +311,29 @@ class WalletManager {
 
 /**
  * Custom Signer that bridges Polkadot extension with ethers.js
+ * Factory function to avoid issues with window.ethers not being loaded yet
  */
-class PolkadotEVMSigner extends window.ethers.Signer {
-    constructor(walletManager, provider) {
-        super();
-        this.walletManager = walletManager;
-        this._provider = provider;
+function createPolkadotEVMSigner(walletManager, provider) {
+    const { ethers } = window;
+    if (!ethers) {
+        throw new Error('ethers.js not loaded');
     }
 
-    async getAddress() {
-        return this.walletManager.getEvmAddress();
-    }
+    class PolkadotEVMSigner extends ethers.Signer {
+        constructor() {
+            super();
+            this.walletManager = walletManager;
+            this._provider = provider;
+        }
+
+        // Ethers.js needs this getter to access the provider for read operations
+        get provider() {
+            return this._provider;
+        }
+
+        async getAddress() {
+            return this.walletManager.getEvmAddress();
+        }
 
     async signMessage(message) {
         // Sign message using Polkadot extension
@@ -323,24 +357,75 @@ class PolkadotEVMSigner extends window.ethers.Signer {
         }
 
         try {
-            // Populate transaction with missing fields
-            const tx = await this._provider.populateTransaction(transaction);
+            console.log('🔄 Signing transaction via Polkadot extension:', transaction);
+
+            // Manually populate transaction fields using provider methods
+            const populatedTx = { ...transaction };
+
+            // Get address
+            const from = await this.getAddress();
+            populatedTx.from = from;
+
+            // Get nonce if not provided
+            if (populatedTx.nonce === undefined) {
+                populatedTx.nonce = await this._provider.getTransactionCount(from, 'pending');
+                console.log('📝 Nonce:', populatedTx.nonce);
+            }
+
+            // Get chain ID if not provided
+            if (populatedTx.chainId === undefined) {
+                const network = await this._provider.getNetwork();
+                populatedTx.chainId = network.chainId;
+                console.log('📝 Chain ID:', populatedTx.chainId);
+            }
+
+            // Get gas limit if not provided (should be provided by our manual setting)
+            if (populatedTx.gasLimit === undefined) {
+                populatedTx.gasLimit = 300000; // Default fallback
+                console.log('⚠ Using default gas limit:', populatedTx.gasLimit);
+            }
+
+            // Get fee data if not provided
+            if (populatedTx.maxFeePerGas === undefined || populatedTx.maxPriorityFeePerGas === undefined) {
+                const feeData = await this._provider.getFeeData();
+                populatedTx.maxFeePerGas = populatedTx.maxFeePerGas || feeData.maxFeePerGas;
+                populatedTx.maxPriorityFeePerGas = populatedTx.maxPriorityFeePerGas || feeData.maxPriorityFeePerGas;
+                console.log('📝 Fee data:', {
+                    maxFeePerGas: populatedTx.maxFeePerGas?.toString(),
+                    maxPriorityFeePerGas: populatedTx.maxPriorityFeePerGas?.toString()
+                });
+            }
 
             // Get transaction parameters
-            const to = tx.to || null;
-            const value = tx.value ? tx.value.toHexString() : '0x0';
-            const gasLimit = tx.gasLimit ? tx.gasLimit.toNumber() : 3000000;
-            const data = tx.data || '0x';
+            const to = populatedTx.to || null;
+            const value = populatedTx.value ? populatedTx.value.toHexString() : '0x0';
+            const gasLimit = typeof populatedTx.gasLimit === 'number'
+                ? populatedTx.gasLimit
+                : populatedTx.gasLimit.toNumber();
+            const data = populatedTx.data || '0x';
+
+            console.log('📝 Transaction params:', { to, value, gasLimit, data: data.slice(0, 20) + '...' });
 
             // Build ethereum.transact extrinsic for EVM transaction
+            // Moonbase Alpha now requires EIP-1559 format (not V2)
             const evmTx = api.tx.ethereum.transact({
-                V2: {
+                eip1559: {
+                    chainId: populatedTx.chainId,
+                    nonce: populatedTx.nonce,
+                    maxPriorityFeePerGas: populatedTx.maxPriorityFeePerGas.toHexString(),
+                    maxFeePerGas: populatedTx.maxFeePerGas.toHexString(),
                     gasLimit: gasLimit,
                     action: to ? { Call: to } : 'Create',
                     value: value,
                     input: data,
+                    accessList: []
                 }
             });
+
+            console.log('📝 Built EIP-1559 Polkadot extrinsic, submitting...');
+            console.log('📝 Substrate address for signing:', this.walletManager.getSubstrateAddress());
+            console.log('📝 Injector signer:', this.walletManager.injector.signer);
+            console.log('📝 Full account:', this.walletManager.getAccount());
 
             // Sign and send using Polkadot extension
             return new Promise((resolve, reject) => {
@@ -356,6 +441,8 @@ class PolkadotEVMSigner extends window.ethers.Signer {
                                 reject(new Error(dispatchError.toString()));
                             }
                         } else if (status.isInBlock || status.isFinalized) {
+                            console.log('✅ Transaction in block:', status.asInBlock?.toHex() || status.asFinalized?.toHex());
+
                             // Find the ethereum execution event to get tx hash
                             const executedEvent = events.find(({ event }) =>
                                 event.section === 'ethereum' && event.method === 'Executed'
@@ -363,14 +450,17 @@ class PolkadotEVMSigner extends window.ethers.Signer {
 
                             if (executedEvent) {
                                 const [from, to, txHash] = executedEvent.event.data;
+                                console.log('✅ EVM transaction hash:', txHash.toHex());
                                 resolve({
                                     hash: txHash.toHex(),
                                     wait: () => Promise.resolve({ status: 1 })
                                 });
                             } else {
                                 // Fallback - return block hash as tx hash
+                                const blockHash = status.asInBlock?.toHex() || status.asFinalized?.toHex();
+                                console.log('⚠ No Executed event, using block hash:', blockHash);
                                 resolve({
-                                    hash: status.asInBlock.toHex(),
+                                    hash: blockHash,
                                     wait: () => Promise.resolve({ status: 1 })
                                 });
                             }
@@ -379,14 +469,17 @@ class PolkadotEVMSigner extends window.ethers.Signer {
                 ).catch(reject);
             });
         } catch (error) {
-            console.error('Transaction signing failed:', error);
+            console.error('❌ Transaction signing failed:', error);
             throw new Error(`Failed to sign transaction: ${error.message}`);
         }
     }
 
-    connect(provider) {
-        return new PolkadotEVMSigner(this.walletManager, provider);
+        connect(provider) {
+            return createPolkadotEVMSigner(this.walletManager, provider);
+        }
     }
+
+    return new PolkadotEVMSigner();
 }
 
 export default WalletManager;
