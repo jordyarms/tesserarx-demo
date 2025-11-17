@@ -229,20 +229,27 @@ class WalletManager {
      * Checks for Ethereum provider injection from Polkadot wallets (Talisman, SubWallet)
      */
     async getSigner() {
+        console.log('🔄 getSigner called, isConnected:', this.isConnected());
+
         if (!this.isConnected()) {
             throw new Error('Wallet not connected');
         }
 
         // Check if wallet injected an Ethereum provider (Talisman, SubWallet do this)
         if (window.ethereum) {
+            console.log('✓ window.ethereum detected, using Web3Provider');
             const { ethers } = window;
             const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-            return web3Provider.getSigner();
+            console.log('✓ Web3Provider created, getting signer...');
+            const signer = await web3Provider.getSigner();
+            console.log('✓ Signer obtained from window.ethereum');
+            return signer;
         }
 
         // Fallback: use custom signer (limited functionality)
+        console.log('⚠ No window.ethereum, using custom PolkadotEVMSigner');
         const provider = await this.getWeb3Provider();
-        return new PolkadotEVMSigner(this, provider);
+        return createPolkadotEVMSigner(this, provider);
     }
 
     /**
@@ -289,13 +296,20 @@ class WalletManager {
 
 /**
  * Custom Signer that bridges Polkadot extension with ethers.js
+ * Factory function to avoid issues with window.ethers not being loaded yet
  */
-class PolkadotEVMSigner extends window.ethers.Signer {
-    constructor(walletManager, provider) {
-        super();
-        this.walletManager = walletManager;
-        this._provider = provider;
+function createPolkadotEVMSigner(walletManager, provider) {
+    const { ethers } = window;
+    if (!ethers) {
+        throw new Error('ethers.js not loaded');
     }
+
+    class PolkadotEVMSigner extends ethers.Signer {
+        constructor() {
+            super();
+            this.walletManager = walletManager;
+            this._provider = provider;
+        }
 
     async getAddress() {
         return this.walletManager.getEvmAddress();
@@ -384,9 +398,12 @@ class PolkadotEVMSigner extends window.ethers.Signer {
         }
     }
 
-    connect(provider) {
-        return new PolkadotEVMSigner(this.walletManager, provider);
+        connect(provider) {
+            return createPolkadotEVMSigner(this.walletManager, provider);
+        }
     }
+
+    return new PolkadotEVMSigner();
 }
 
 export default WalletManager;

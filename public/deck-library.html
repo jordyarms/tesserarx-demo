@@ -210,17 +210,27 @@
 
         async function connectWallet() {
             try {
+                console.log('🔄 Starting wallet connection...');
+
                 // Use Polkadot wallet manager
                 const connected = await walletManager.connect();
+                console.log('✓ Wallet manager connected:', connected);
 
                 if (!connected) {
                     return;
                 }
 
                 // Get provider and contract from wallet manager
+                console.log('🔄 Getting Web3 provider...');
                 provider = await walletManager.getWeb3Provider();
+                console.log('✓ Provider obtained');
+
+                console.log('🔄 Getting contract instance...');
                 contract = await walletManager.getContract(CONTRACT_ABI);
+                console.log('✓ Contract obtained:', contract ? 'success' : 'failed');
+
                 userAddress = walletManager.getEvmAddress();
+                console.log('✓ User address:', userAddress);
 
                 document.getElementById('connectButton').style.display = 'none';
                 document.getElementById('walletInfo').classList.remove('hidden');
@@ -233,10 +243,12 @@
                     </div>
                 `;
 
+                console.log('🔄 Loading marketplace library...');
                 await loadLibrary();
+                console.log('✓ Marketplace loaded successfully');
 
             } catch (error) {
-                console.error('Connection error:', error);
+                console.error('❌ Connection error:', error);
                 alert('Connection failed: ' + error.message);
             }
         }
