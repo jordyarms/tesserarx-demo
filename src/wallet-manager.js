@@ -312,7 +312,72 @@ class PolkadotEVMSigner extends window.ethers.Signer {
     }
 
     async signTransaction(transaction) {
-        throw new Error('Direct transaction signing not supported. Use contract methods.');
+        // Use Polkadot extension to sign and submit EVM transaction via Moonbeam's ethereum pallet
+        const api = this.walletManager.getApi();
+        if (!api) {
+            throw new Error('Not connected to Moonbeam');
+        }
+
+        try {
+            // Populate transaction with missing fields
+            const tx = await this._provider.populateTransaction(transaction);
+
+            // Get transaction parameters
+            const to = tx.to || null;
+            const value = tx.value ? tx.value.toHexString() : '0x0';
+            const gasLimit = tx.gasLimit ? tx.gasLimit.toNumber() : 3000000;
+            const data = tx.data || '0x';
+
+            // Build ethereum.transact extrinsic for EVM transaction
+            const evmTx = api.tx.ethereum.transact({
+                V2: {
+                    gasLimit: gasLimit,
+                    action: to ? { Call: to } : 'Create',
+                    value: value,
+                    input: data,
+                }
+            });
+
+            // Sign and send using Polkadot extension
+            return new Promise((resolve, reject) => {
+                evmTx.signAndSend(
+                    this.walletManager.getSubstrateAddress(),
+                    { signer: this.walletManager.injector.signer },
+                    ({ status, events, dispatchError }) => {
+                        if (dispatchError) {
+                            if (dispatchError.isModule) {
+                                const decoded = api.registry.findMetaError(dispatchError.asModule);
+                                reject(new Error(`${decoded.section}.${decoded.name}: ${decoded.docs}`));
+                            } else {
+                                reject(new Error(dispatchError.toString()));
+                            }
+                        } else if (status.isInBlock || status.isFinalized) {
+                            // Find the ethereum execution event to get tx hash
+                            const executedEvent = events.find(({ event }) =>
+                                event.section === 'ethereum' && event.method === 'Executed'
+                            );
+
+                            if (executedEvent) {
+                                const [from, to, txHash] = executedEvent.event.data;
+                                resolve({
+                                    hash: txHash.toHex(),
+                                    wait: () => Promise.resolve({ status: 1 })
+                                });
+                            } else {
+                                // Fallback - return block hash as tx hash
+                                resolve({
+                                    hash: status.asInBlock.toHex(),
+                                    wait: () => Promise.resolve({ status: 1 })
+                                });
+                            }
+                        }
+                    }
+                ).catch(reject);
+            });
+        } catch (error) {
+            console.error('Transaction signing failed:', error);
+            throw new Error(`Failed to sign transaction: ${error.message}`);
+        }
     }
 
     connect(provider) {
