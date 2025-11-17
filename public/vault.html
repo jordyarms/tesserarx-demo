@@ -154,8 +154,8 @@
             grid.innerHTML = '<div class="col-span-full text-center py-20"><div class="status mx-auto mb-4"></div><div class="mono text-caption text-muted">Loading your collection...</div></div>';
 
             try {
-                // Load only owned decks using ContentLoader
-                ownedDecks = await ContentLoader.loadOwnedDecks(contract, userAddress);
+                // Load only owned decks using ContentLoader (bypass cache for fresh ownership data)
+                ownedDecks = await ContentLoader.loadOwnedDecks(contract, userAddress, false);
 
                 grid.innerHTML = '';
 

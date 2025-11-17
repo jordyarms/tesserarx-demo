@@ -153,8 +153,8 @@
             selector.innerHTML = '<option value="">— Loading your decks... —</option>';
 
             try {
-                // Use ContentLoader to get owned decks
-                ownedDecks = await ContentLoader.loadOwnedDecks(contract, userAddress);
+                // Use ContentLoader to get owned decks (bypass cache for fresh ownership data)
+                ownedDecks = await ContentLoader.loadOwnedDecks(contract, userAddress, false);
 
                 if (ownedDecks.length === 0) {
                     selector.innerHTML = '<option value="">— No decks owned. Visit Market to claim. —</option>';

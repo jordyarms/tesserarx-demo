@@ -196,8 +196,8 @@ function clearDeckCache() {
 /**
  * Load owned decks for a user
  */
-async function loadOwnedDecks(contract, userAddress) {
-    const allDecks = await loadAllDecks(contract);
+async function loadOwnedDecks(contract, userAddress, useCache = true) {
+    const allDecks = await loadAllDecks(contract, useCache);
     const owned = [];
 
     for (const deck of allDecks) {
