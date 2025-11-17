@@ -174,8 +174,8 @@
             "function balanceOf(address account, uint256 id) view returns (uint256)",
             "function uri(uint256 tokenId) view returns (string)",
 
-            // V2.1 Content Info
-            "function getContentInfo(uint256 contentId) view returns (address creator, string name, bool isFree, uint256 price, uint256 referralBasisPoints, uint256 maxSupply, uint256 currentSupply)",
+            // V2.1 Content Info - Fixed to match actual contract
+            "function getContentInfo(uint256 contentId) view returns (address creator, string name, uint256 maxSupply, uint256 totalMinted, uint256 activeVersionIndex, uint256 price)",
             "function getActiveVersion(uint256 contentId) view returns (tuple(string payloadURI, string specificationURI, string manifestURI, uint256 timestamp, string reason, address updatedBy))",
             "function contentCreators(uint256 contentId) view returns (address)",
 

@@ -69,6 +69,7 @@ function isLegacy(manifest) {
  * Parse manifest + contract data into unified deck object
  */
 function parseDeckData(contentId, contractInfo, manifest) {
+    const { ethers } = window;
     const price = ethers.BigNumber.from(contractInfo.price || 0);
     const maxSupply = typeof contractInfo.maxSupply === 'number'
         ? contractInfo.maxSupply
@@ -111,9 +112,10 @@ async function loadDeck(contract, contentId) {
         const info = await contract.getContentInfo(contentId);
         console.log(`✓ Got info for deck ${contentId}:`, {
             name: info.name,
-            creator: info.creator,
-            price: info.price.toString(),
-            totalMinted: info.totalMinted.toString()
+            creator: info.creator.slice(0, 8) + '...',
+            maxSupply: info.maxSupply.toString(),
+            totalMinted: info.totalMinted.toString(),
+            price: window.ethers.utils.formatEther(info.price) + ' DEV'
         });
 
         const version = await contract.getActiveVersion(contentId);
