@@ -376,20 +376,35 @@
         async function claim(id) {
             try {
                 if (confirm('Claim this free deck pass?')) {
-                    const tx = await contract.claim(id);
-                    alert('Claiming pass...');
+                    console.log('🔄 Claiming deck ID:', id);
+
+                    // Manual gas limit for Moonbeam (gas estimation fails with custom signer)
+                    const gasLimit = 300000;
+
+                    console.log('📝 Sending claim transaction with gas limit:', gasLimit);
+                    const tx = await contract.claim(id, {
+                        gasLimit: gasLimit
+                    });
+
+                    console.log('⏳ Transaction sent:', tx.hash);
+                    alert('Claiming pass... Transaction hash: ' + tx.hash.slice(0, 10) + '...');
+
                     await tx.wait();
+
+                    console.log('✅ Claim successful!');
                     alert('Pass claimed successfully!');
                     await loadLibrary(true); // Force refresh after claim
                 }
             } catch (error) {
-                console.error('Claim error:', error);
+                console.error('❌ Claim error:', error);
                 if (error.message.includes('Already claimed')) {
                     alert('You have already claimed this deck.');
                 } else if (error.message.includes('Content is not free')) {
                     alert('This deck is not free. Please use the purchase option.');
+                } else if (error.message.includes('gas')) {
+                    alert('Transaction failed due to gas estimation. Please ensure you have enough DEV tokens for gas.');
                 } else {
-                    alert('Claim failed: ' + error.message);
+                    alert('Claim failed: ' + (error.reason || error.message));
                 }
             }
         }
@@ -486,11 +501,15 @@
                 // Get price
                 const price = await contract.contentPrice(contentId);
 
-                // Execute purchase
-                const tx = (referrer !== ethers.constants.AddressZero)
-                    ? await contract.purchaseWithReferral(contentId, 1, referrer, { value: price })
-                    : await contract.purchase(contentId, 1, { value: price });
+                // Execute purchase with manual gas limit
+                const gasLimit = 300000;
+                console.log('📝 Purchasing with gas limit:', gasLimit, 'price:', ethers.utils.formatEther(price), 'DEV');
 
+                const tx = (referrer !== ethers.constants.AddressZero)
+                    ? await contract.purchaseWithReferral(contentId, 1, referrer, { value: price, gasLimit })
+                    : await contract.purchase(contentId, 1, { value: price, gasLimit });
+
+                console.log('⏳ Purchase transaction sent:', tx.hash);
                 btn.textContent = 'Confirming...';
 
                 // Wait for confirmation
@@ -524,17 +543,23 @@
             }
 
             try {
-                const tx = await contract.claim(contentId);
+                // Manual gas limit for Moonbeam (gas estimation fails with custom signer)
+                const gasLimit = 300000;
+                console.log('📝 Claiming free pass with gas limit:', gasLimit);
+
+                const tx = await contract.claim(contentId, { gasLimit });
+                console.log('⏳ Claim transaction sent:', tx.hash);
                 alert('⏳ Claiming free pass...');
                 await tx.wait();
 
+                console.log('✅ Claim successful!');
                 // Clear cache to ensure fresh data everywhere
                 ContentLoader.clearDeckCache();
                 alert('✅ Free pass claimed!');
                 await loadLibrary(true); // Force refresh after claim
             } catch (error) {
-                console.error('Claim failed:', error);
-                alert(`❌ Claim failed: ${error.message}`);
+                console.error('❌ Claim failed:', error);
+                alert(`❌ Claim failed: ${error.reason || error.message}`);
             }
         }
 
