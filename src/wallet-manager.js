@@ -244,13 +244,26 @@ class WalletManager {
                 // First check if we can get accounts from the ethereum provider
                 const accounts = await window.ethereum.request({ method: 'eth_accounts' });
                 console.log('📝 Accounts from window.ethereum:', accounts);
+                console.log('📝 Expected EVM address (derived from Substrate):', this.evmAddress);
 
                 if (accounts && accounts.length > 0) {
-                    const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-                    console.log('✓ Web3Provider created, getting signer...');
-                    const signer = await web3Provider.getSigner(accounts[0]);
-                    console.log('✓ Signer obtained from window.ethereum for:', accounts[0]);
-                    return signer;
+                    // Check if our derived EVM address matches any of the accounts
+                    const matchingAccount = accounts.find(acc =>
+                        acc.toLowerCase() === this.evmAddress.toLowerCase()
+                    );
+
+                    if (matchingAccount) {
+                        console.log('✅ Found matching account in window.ethereum:', matchingAccount);
+                        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+                        const signer = await web3Provider.getSigner(matchingAccount);
+                        console.log('✓ Signer obtained from window.ethereum for correct account');
+                        return signer;
+                    } else {
+                        console.warn('⚠ Derived EVM address not found in window.ethereum accounts');
+                        console.warn('   Expected:', this.evmAddress);
+                        console.warn('   Available:', accounts);
+                        console.warn('   Falling back to custom signer...');
+                    }
                 } else {
                     console.log('⚠ No accounts available from window.ethereum, using custom signer');
                 }
