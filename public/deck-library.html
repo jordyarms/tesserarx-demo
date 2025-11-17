@@ -244,7 +244,9 @@
                 `;
 
                 console.log('🔄 Loading marketplace library...');
-                await loadLibrary();
+                // Clear cache to ensure fresh data after connection
+                ContentLoader.clearDeckCache(userAddress);
+                await loadLibrary(true); // Force refresh
                 console.log('✓ Marketplace loaded successfully');
 
             } catch (error) {

@@ -104,9 +104,20 @@ function parseDeckData(contentId, contractInfo, manifest) {
  */
 async function loadDeck(contract, contentId) {
     try {
+        console.log(`📥 Loading deck ${contentId}...`);
+
         // Fetch contract data
+        // Contract returns: creator, name, maxSupply, totalMinted, activeVersionIndex, price
         const info = await contract.getContentInfo(contentId);
+        console.log(`✓ Got info for deck ${contentId}:`, {
+            name: info.name,
+            creator: info.creator,
+            price: info.price.toString(),
+            totalMinted: info.totalMinted.toString()
+        });
+
         const version = await contract.getActiveVersion(contentId);
+        console.log(`✓ Got version for deck ${contentId}, manifestURI:`, version.manifestURI);
 
         // Fetch manifest (with fallback to local metadata)
         let manifest;
@@ -137,17 +148,21 @@ async function loadDeck(contract, contentId) {
             }
         }
 
-        // Parse combined data (V2.1 contract structure)
-        return parseDeckData(contentId, {
+        // Parse combined data
+        // Contract fields: creator, name, maxSupply, totalMinted, activeVersionIndex, price
+        const deck = parseDeckData(contentId, {
             name: info.name,
             creator: info.creator,
-            isFree: info.isFree,
+            isFree: info.price.isZero(), // Check if price is 0
             price: info.price,
             maxSupply: info.maxSupply,
-            currentSupply: info.currentSupply
+            currentSupply: info.totalMinted // Contract calls it totalMinted
         }, manifest);
+
+        console.log(`✓ Deck ${contentId} loaded:`, deck.name);
+        return deck;
     } catch (error) {
-        console.warn(`Failed to load deck ${contentId}:`, error);
+        console.error(`❌ Failed to load deck ${contentId}:`, error);
         return null;
     }
 }
@@ -168,17 +183,21 @@ async function loadAllDecks(contract, useCache = true, walletAddress = null) {
             try {
                 const data = JSON.parse(cached);
                 if (Date.now() - data.timestamp < CACHE_TTL) {
-                    console.log(`Using cached deck data${walletAddress ? ' for wallet ' + walletAddress.slice(0, 6) + '...' : ''}`);
+                    console.log(`📦 Using cached deck data${walletAddress ? ' for wallet ' + walletAddress.slice(0, 6) + '...' : ''} (${data.decks.length} decks)`);
                     return data.decks;
+                } else {
+                    console.log('⏰ Cache expired, reloading from contract');
                 }
             } catch (error) {
-                console.warn('Cache parse error:', error);
+                console.warn('❌ Cache parse error:', error);
             }
+        } else {
+            console.log('📭 No cache found, loading from contract');
         }
     }
 
     // Load from contract
-    console.log('Loading decks from contract...');
+    console.log(`🔄 Loading ${KNOWN_CONTENT_IDS.length} decks from contract:`, KNOWN_CONTENT_IDS);
     const decks = [];
 
     for (const id of KNOWN_CONTENT_IDS) {
@@ -188,6 +207,8 @@ async function loadAllDecks(contract, useCache = true, walletAddress = null) {
         }
     }
 
+    console.log(`✅ Loaded ${decks.length} decks successfully`);
+
     // Update cache
     if (useCache) {
         try {
@@ -196,8 +217,9 @@ async function loadAllDecks(contract, useCache = true, walletAddress = null) {
                 timestamp: Date.now(),
                 walletAddress: walletAddress || 'global'
             }));
+            console.log(`💾 Cached ${decks.length} decks for future use`);
         } catch (error) {
-            console.warn('Cache write error:', error);
+            console.warn('❌ Cache write error:', error);
         }
     }
 
