@@ -174,12 +174,15 @@ class WalletManager {
 
         if (this.selectedAccount) {
             const displayName = this.selectedAccount.meta.name || 'Account';
-            const shortAddr = `${this.selectedAccount.address.slice(0, 6)}...${this.selectedAccount.address.slice(-4)}`;
+            const shortSubstrateAddr = `${this.selectedAccount.address.slice(0, 6)}...${this.selectedAccount.address.slice(-4)}`;
+            const shortEvmAddr = this.evmAddress ? `${this.evmAddress.slice(0, 6)}...${this.evmAddress.slice(-4)}` : 'N/A';
 
             statusDiv.innerHTML = `
                 <div class="flex items-center gap-3">
                     <div class="text-sm font-mono text-accent">
-                        ${displayName} (${shortAddr})
+                        ${displayName}<br>
+                        <span class="text-xs text-muted">Substrate: ${shortSubstrateAddr}</span><br>
+                        <span class="text-xs text-muted">EVM: ${shortEvmAddr}</span>
                     </div>
                     <button
                         onclick="walletManager.disconnect()"
@@ -241,16 +244,42 @@ class WalletManager {
             const { ethers } = window;
 
             try {
-                // First check if we can get accounts from the ethereum provider
-                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                console.log('📝 Accounts from window.ethereum:', accounts);
+                // Request account access (may prompt user to select account)
+                console.log('📝 Requesting account access from window.ethereum...');
+                let accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                console.log('📝 Accounts from window.ethereum (after request):', accounts);
+                console.log('📝 Expected EVM address (derived from Substrate):', this.evmAddress);
 
                 if (accounts && accounts.length > 0) {
-                    const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-                    console.log('✓ Web3Provider created, getting signer...');
-                    const signer = await web3Provider.getSigner(accounts[0]);
-                    console.log('✓ Signer obtained from window.ethereum for:', accounts[0]);
-                    return signer;
+                    // First, try to find our derived EVM address
+                    let matchingAccount = accounts.find(acc =>
+                        acc.toLowerCase() === this.evmAddress.toLowerCase()
+                    );
+
+                    if (matchingAccount) {
+                        console.log('✅ Found matching account in window.ethereum:', matchingAccount);
+                        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+                        const signer = await web3Provider.getSigner(matchingAccount);
+                        console.log('✓ Signer obtained from window.ethereum for correct account');
+                        return signer;
+                    } else {
+                        // If no match, use the first available EVM account from SubWallet
+                        console.warn('⚠ Derived EVM address not found, using first available EVM account');
+                        console.warn('   Expected:', this.evmAddress);
+                        console.warn('   Using:', accounts[0]);
+
+                        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+                        const signer = await web3Provider.getSigner(accounts[0]);
+
+                        // Update our stored EVM address to match what we're actually using
+                        this.evmAddress = accounts[0];
+                        console.log('✓ Signer obtained, updated EVM address to:', this.evmAddress);
+
+                        // Update the UI to reflect the actual address being used
+                        this.renderWalletStatus();
+
+                        return signer;
+                    }
                 } else {
                     console.log('⚠ No accounts available from window.ethereum, using custom signer');
                 }
